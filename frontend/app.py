@@ -16,24 +16,25 @@ st.markdown(
     <style>
     .stApp {
         background:
-            radial-gradient(circle at top left, rgba(14, 165, 233, 0.08), transparent 28%),
-            radial-gradient(circle at top right, rgba(251, 191, 36, 0.08), transparent 24%),
-            linear-gradient(180deg, #07111f 0%, #0b1324 50%, #0e1729 100%);
+            radial-gradient(circle at top left, rgba(14, 165, 233, 0.07), transparent 24%),
+            radial-gradient(circle at top right, rgba(251, 191, 36, 0.06), transparent 22%),
+            linear-gradient(180deg, #07111f 0%, #0b1220 50%, #0c1628 100%);
     }
     .block-container {
-        max-width: 1100px;
-        padding-top: 2rem;
+        max-width: 1080px;
+        padding-top: 1.4rem;
         padding-bottom: 3rem;
     }
     .hero-card {
-        border: 1px solid rgba(120, 140, 170, 0.20);
+        border: 1px solid rgba(120, 140, 170, 0.16);
         background:
-            radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 24%),
-            linear-gradient(135deg, rgba(18,24,38,0.98), rgba(10,17,30,0.98));
-        border-radius: 24px;
-        padding: 1.3rem 1.35rem;
-        box-shadow: 0 18px 48px rgba(0,0,0,0.28);
-        margin-bottom: 1rem;
+            radial-gradient(circle at top right, rgba(14, 165, 233, 0.10), transparent 26%),
+            linear-gradient(180deg, rgba(15,22,36,0.98), rgba(10,16,28,0.98));
+        border-radius: 28px;
+        padding: 1.5rem 1.5rem 1.35rem;
+        box-shadow: 0 18px 48px rgba(0,0,0,0.24);
+        margin-bottom: 1.15rem;
+        text-align: center;
     }
     .panel-card, .metric-card, .citation-card, .clause-card, .upload-card {
         border: 1px solid rgba(120, 140, 170, 0.18);
@@ -43,15 +44,15 @@ st.markdown(
         box-shadow: 0 12px 32px rgba(0,0,0,0.18);
     }
     .hero-title {
-        font-size: 2.2rem;
+        font-size: 2.5rem;
         font-weight: 800;
         margin-bottom: 0.35rem;
         letter-spacing: -0.03em;
     }
     .hero-subtitle {
         color: #adc0d8;
-        margin-bottom: 0.9rem;
-        max-width: 760px;
+        margin: 0 auto 0.95rem;
+        max-width: 720px;
         line-height: 1.65;
     }
     .hero-kicker {
@@ -64,6 +65,21 @@ st.markdown(
         background: rgba(14,165,233,0.12);
         border: 1px solid rgba(56,189,248,0.22);
         margin-bottom: 0.85rem;
+    }
+    .hero-support {
+        display: inline-flex;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 0.2rem;
+    }
+    .hero-pill {
+        border-radius: 999px;
+        padding: 0.32rem 0.72rem;
+        font-size: 0.8rem;
+        color: #c8d9ee;
+        background: rgba(148,163,184,0.08);
+        border: 1px solid rgba(148,163,184,0.14);
     }
     .metric-value {
         font-size: 1.85rem;
@@ -115,6 +131,37 @@ st.markdown(
         color: #9ab0c8;
         font-size: 0.88rem;
         margin-top: 0.2rem;
+    }
+    .upload-shell {
+        border: 1px solid rgba(120, 140, 170, 0.16);
+        background: linear-gradient(180deg, rgba(16,22,36,0.97), rgba(12,18,30,0.97));
+        border-radius: 24px;
+        padding: 1.2rem;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 16px 38px rgba(0,0,0,0.22);
+    }
+    .mini-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.85rem;
+        margin-top: 0.85rem;
+        margin-bottom: 0.4rem;
+    }
+    .mini-card {
+        border-radius: 18px;
+        padding: 0.9rem;
+        background: rgba(148,163,184,0.05);
+        border: 1px solid rgba(148,163,184,0.10);
+    }
+    .mini-title {
+        font-weight: 700;
+        margin-bottom: 0.3rem;
+        color: #e8eef8;
+    }
+    .mini-copy {
+        color: #9cb0c8;
+        font-size: 0.88rem;
+        line-height: 1.5;
     }
     </style>
     """,
@@ -201,8 +248,15 @@ st.markdown(
         <div class="hero-kicker">Source-grounded document intelligence</div>
         <div class="hero-title">AI Terms &amp; Conditions Analyzer</div>
         <p class="hero-subtitle">
-            Upload a PDF, get the most important risks first, and ask questions with cited evidence instead of reading the whole document line by line.
+            Analyze PDFs, links, or photos of printed documents. Get the most important risks first, then ask follow-up questions with cited evidence.
         </p>
+        <div class="hero-support">
+            <span class="hero-pill">PDFs</span>
+            <span class="hero-pill">Links</span>
+            <span class="hero-pill">Document Photos</span>
+            <span class="hero-pill">Risk Scoring</span>
+            <span class="hero-pill">Cited Answers</span>
+        </div>
     </div>
     """,
     unsafe_allow_html=True,
@@ -223,14 +277,35 @@ if "analysis_payload" not in st.session_state:
 # -------------------------------
 # FILE UPLOAD
 # -------------------------------
-st.markdown('<div class="section-label">Upload Document</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-intro">Choose the input type that matches what the user actually has: a PDF, a webpage/PDF link, or photos of a printed document.</div>', unsafe_allow_html=True)
+st.markdown(
+    """
+    <div class="upload-shell">
+        <div class="section-label">Analyze A Document</div>
+        <div class="section-intro">Choose the input type that matches what the user actually has. All three options use the same analysis engine and risk scoring.</div>
+        <div class="mini-grid">
+            <div class="mini-card">
+                <div class="mini-title">1. Add the document</div>
+                <div class="mini-copy">Upload a PDF, paste a link, or add photos of a printed page.</div>
+            </div>
+            <div class="mini-card">
+                <div class="mini-title">2. Review the risks</div>
+                <div class="mini-copy">See the main red flags first, without digging through the full document.</div>
+            </div>
+            <div class="mini-card">
+                <div class="mini-title">3. Ask follow-up questions</div>
+                <div class="mini-copy">Use chat to ask direct questions and get evidence-backed answers.</div>
+            </div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
-input_tab_pdf, input_tab_link, input_tab_images = st.tabs(["PDF upload", "Link", "Document photos"])
+input_tab_pdf, input_tab_link, input_tab_images = st.tabs(["Upload PDF", "Paste Link", "Upload Photos"])
 
 with input_tab_pdf:
     uploaded_file = st.file_uploader("Upload PDF", type=["pdf"], label_visibility="collapsed")
-    st.markdown('<div class="input-mode-note">Best for downloaded terms, policy PDFs, and bank documents.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="input-mode-note">Best for downloaded contracts, policy PDFs, bank documents, and official forms.</div>', unsafe_allow_html=True)
 
     if uploaded_file is not None:
         st.info("Uploading and analyzing document...")
@@ -254,7 +329,7 @@ with input_tab_pdf:
             st.error(f"Connection Error: {e}")
 
 with input_tab_link:
-    st.markdown('<div class="input-mode-note">Paste a direct PDF link or a normal webpage link. The app checks the link first before analyzing it.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="input-mode-note">Paste a direct PDF link or a normal webpage link. The app validates the link before analyzing it.</div>', unsafe_allow_html=True)
     doc_url = st.text_input("Paste document link", placeholder="https://example.com/terms.pdf")
 
     if st.button("Analyze link"):
@@ -275,7 +350,7 @@ with input_tab_link:
                     st.error(f"Connection Error: {e}")
 
 with input_tab_images:
-    st.markdown('<div class="input-mode-note">Upload one or more photos of a printed document. The app will extract text from the images before analyzing it.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="input-mode-note">Upload one or more photos of a printed document. The app extracts text from the images first, then runs the same analyzer.</div>', unsafe_allow_html=True)
     document_images = st.file_uploader(
         "Upload document photos",
         type=["png", "jpg", "jpeg", "webp"],
@@ -389,7 +464,7 @@ if st.session_state.analysis_payload:
 # Q&A SECTION
 # -------------------------------
 st.markdown('<div class="section-label" style="margin-top:1.4rem;">Chat With Document</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-intro">Ask direct questions in your own words. The app answers using retrieved document evidence.</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-intro">Ask direct questions in your own words. The app answers with retrieved document evidence so the user can verify the result.</div>', unsafe_allow_html=True)
 
 if not st.session_state.document_loaded:
     st.warning("⚠️ Please upload and analyze a document first.")
