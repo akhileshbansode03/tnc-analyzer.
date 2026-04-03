@@ -64,6 +64,11 @@ def startup():
     init_db()
 
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
 def _sanitize_filename(filename: str | None, fallback: str):
     safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", filename or fallback).strip("._")
     return safe_name or fallback

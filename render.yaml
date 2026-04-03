@@ -8,13 +8,13 @@ services:
     envVars:
       - key: GEMINI_API_KEY
         sync: false
+      - key: USE_GEMINI
+        value: true
+      - key: ENABLE_LOCAL_FALLBACK
+        value: false
       - key: BACKEND_BASE_URL
         sync: false
       - key: FRONTEND_BASE_URL
         sync: false
-      - key: GOOGLE_CLIENT_ID
-        sync: false
-      - key: GOOGLE_CLIENT_SECRET
-        sync: false
-      - key: GOOGLE_REDIRECT_URI
+      - key: API_BASE_URL
         sync: false

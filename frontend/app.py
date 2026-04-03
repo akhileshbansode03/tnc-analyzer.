@@ -2,7 +2,6 @@ import html
 import os
 import re
 from textwrap import dedent
-from urllib.parse import quote
 
 import requests
 import streamlit as st
@@ -16,12 +15,7 @@ API_ANALYZE_URL = f"{BACKEND_BASE_URL}/analyze-url"
 API_ANALYZE_IMAGES = f"{BACKEND_BASE_URL}/analyze-images"
 API_ASK = f"{BACKEND_BASE_URL}/ask"
 API_REPORT = f"{BACKEND_BASE_URL}/report"
-API_AUTH_LOGOUT = f"{BACKEND_BASE_URL}/auth/logout"
-API_AUTH_GOOGLE_START = f"{BACKEND_BASE_URL}/auth/google/start"
-API_AUTH_ME = f"{BACKEND_BASE_URL}/auth/me"
-API_HISTORY = f"{BACKEND_BASE_URL}/history"
-API_LOAD_ANALYSIS = f"{BACKEND_BASE_URL}/analysis"
-FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:8501")
+API_HEALTH = f"{BACKEND_BASE_URL}/health"
 
 st.set_page_config(page_title="T&C Analyzer", page_icon="📄", layout="wide")
 
@@ -649,38 +643,9 @@ def _html_block(markup: str):
     return dedent(markup).strip()
 
 
-def _auth_headers():
-    token = st.session_state.get("auth_token")
-    return {"Authorization": f"Bearer {token}"} if token else {}
-
-
-def _query_value(name: str):
-    try:
-        value = st.query_params.get(name)
-    except Exception:
-        return None
-    if isinstance(value, list):
-        return value[0] if value else None
-    return value
-
-
-def _clear_auth_query_params():
-    try:
-        for key in ["auth_token", "auth_error"]:
-            if key in st.query_params:
-                del st.query_params[key]
-    except Exception:
-        pass
-
-
-def _google_start_url():
-    return f"{API_AUTH_GOOGLE_START}?next_url={quote(FRONTEND_BASE_URL, safe=':/?=&')}"
-
-
 @st.cache_data(show_spinner=False)
-def _fetch_report_bytes(document_id: str, token: str | None):
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
-    response = requests.get(f"{API_REPORT}/{document_id}", headers=headers, timeout=30)
+def _fetch_report_bytes(document_id: str):
+    response = requests.get(f"{API_REPORT}/{document_id}", timeout=30)
     response.raise_for_status()
     return response.content
 
@@ -691,42 +656,6 @@ def _report_filename(payload: dict):
     stem = re.sub(r"\.[A-Za-z0-9]+$", "", original_name)
     safe_stem = re.sub(r"[^A-Za-z0-9_-]+", "_", stem).strip("_") or "tnc_analysis"
     return f"{safe_stem}_report.pdf"
-
-
-@st.cache_data(show_spinner=False)
-def _fetch_history(token: str):
-    response = requests.get(API_HISTORY, headers={"Authorization": f"Bearer {token}"}, timeout=20)
-    response.raise_for_status()
-    return response.json()
-
-
-def _clear_auth_state():
-    st.session_state.auth_token = None
-    st.session_state.current_user = None
-    _fetch_history.clear()
-    _fetch_report_bytes.clear()
-
-
-def _resolve_user_from_token(token: str):
-    response = requests.get(
-        API_AUTH_ME,
-        headers={"Authorization": f"Bearer {token}"},
-        timeout=20,
-    )
-    response.raise_for_status()
-    return response.json()
-
-
-def _load_history_document(document_id: str):
-    response = requests.get(
-        f"{API_LOAD_ANALYSIS}/{document_id}",
-        headers=_auth_headers(),
-        timeout=30,
-    )
-    response.raise_for_status()
-    payload = response.json()
-    _apply_analysis_payload(payload)
-    return payload
 
 
 def _apply_analysis_payload(payload):
@@ -778,102 +707,17 @@ if "document_id" not in st.session_state:
 if "analysis_payload" not in st.session_state:
     st.session_state.analysis_payload = None
 
-if "auth_token" not in st.session_state:
-    st.session_state.auth_token = None
-
-if "current_user" not in st.session_state:
-    st.session_state.current_user = None
-
-auth_token_param = _query_value("auth_token")
-auth_error_param = _query_value("auth_error")
-
-if auth_token_param and auth_token_param != st.session_state.auth_token:
-    try:
-        user_payload = _resolve_user_from_token(auth_token_param)
-        st.session_state.auth_token = auth_token_param
-        st.session_state.current_user = user_payload
-        _fetch_history.clear()
-        _fetch_report_bytes.clear()
-    except Exception:
-        st.session_state.auth_token = None
-        st.session_state.current_user = None
-    finally:
-        _clear_auth_query_params()
-
-if auth_error_param:
-    st.sidebar.error("Google sign-in could not be completed. Please try again.")
-    _clear_auth_query_params()
-
 with st.sidebar:
-    st.markdown("### Account")
-    if st.session_state.current_user:
-        user = st.session_state.current_user
-        st.markdown(
-            _html_block(
-                f"""
-                <div class="sidebar-auth-card">
-                    <div class="sidebar-auth-title">{html.escape(user.get('name') or 'Signed in')}</div>
-                    <div class="sidebar-auth-copy">{html.escape(user.get('email') or '')}</div>
-                </div>
-                """
-            ),
-            unsafe_allow_html=True,
-        )
-        if st.button("Sign out", use_container_width=True):
-            try:
-                requests.post(API_AUTH_LOGOUT, headers=_auth_headers(), timeout=15)
-            except Exception:
-                pass
-            _clear_auth_state()
-            st.rerun()
-
-        st.markdown("### Saved Analyses")
-        try:
-            history_items = _fetch_history(st.session_state.auth_token)
-        except Exception as exc:
-            history_items = []
-            st.caption(f"Could not load history: {exc}")
-
-        if history_items:
-            for item in history_items:
-                risk = item["risk_overview"]
-                label = item.get("original_name") or f"{item['source_type'].upper()} document"
-                preview = " ".join((item.get("summary") or "").split())[:88]
-                st.markdown(
-                    _html_block(
-                        f"""
-                        <div class="history-item-card">
-                            <div class="history-item-title">{html.escape(label)}</div>
-                            <div class="history-item-meta">H:{risk['high']} M:{risk['medium']} L:{risk['low']} | {html.escape(item['created_at'][:10])}</div>
-                            <div class="history-item-meta">{html.escape(preview + ('...' if len(preview) == 88 else ''))}</div>
-                        </div>
-                        """
-                    ),
-                    unsafe_allow_html=True,
-                )
-                if st.button("Open analysis", key=f"history-open-{item['document_id']}", use_container_width=True):
-                    with st.spinner("Loading saved analysis..."):
-                        try:
-                            _load_history_document(item["document_id"])
-                            st.rerun()
-                        except Exception as exc:
-                            st.error(f"Could not load analysis: {exc}")
+    st.markdown("### Deployment Note")
+    st.caption("Login is postponed for now so the app stays simpler to deploy and demo. We can add account history back once the live version is stable.")
+    try:
+        health_response = requests.get(API_HEALTH, timeout=8)
+        if health_response.status_code == 200:
+            st.success("Backend reachable")
         else:
-            st.caption("Your saved analyses will appear here once you analyze documents while signed in.")
-    else:
-        st.markdown(
-            _html_block(
-                f"""
-                <div class="sidebar-auth-card">
-                    <div class="sidebar-auth-title">Sign in with Google</div>
-                    <div class="sidebar-auth-copy">Use one clean Google sign-in to save your analyses, reopen past documents, and keep exports tied to your account.</div>
-                    <a class="google-auth-link" href="{html.escape(_google_start_url())}" target="_self">Continue with Google</a>
-                </div>
-                """
-            ),
-            unsafe_allow_html=True,
-        )
-        st.caption("Google sign-in needs Google OAuth credentials in the backend environment before it can work in deployment.")
+            st.warning("Backend is running but health check did not return 200.")
+    except Exception:
+        st.warning("Backend not reachable yet. Start the API before using the app.")
 
 # -------------------------------
 # FILE UPLOAD
@@ -916,7 +760,7 @@ with input_tab_pdf:
         }
 
         try:
-            response = requests.post(API_ANALYZE, files=files, headers=_auth_headers())
+            response = requests.post(API_ANALYZE, files=files)
 
             if response.status_code == 200:
                 payload = response.json()
@@ -939,7 +783,7 @@ with input_tab_link:
         else:
             with st.spinner("Checking link and analyzing document..."):
                 try:
-                    response = requests.post(API_ANALYZE_URL, json={"url": doc_url.strip()}, headers=_auth_headers())
+                    response = requests.post(API_ANALYZE_URL, json={"url": doc_url.strip()})
                     if response.status_code == 200:
                         payload = response.json()
                         st.success("Link analysis complete ✅")
@@ -969,7 +813,7 @@ with input_tab_images:
                         ("files", (image.name, image, image.type or "image/jpeg"))
                         for image in document_images
                     ]
-                    response = requests.post(API_ANALYZE_IMAGES, files=files, headers=_auth_headers())
+                    response = requests.post(API_ANALYZE_IMAGES, files=files)
                     if response.status_code == 200:
                         payload = response.json()
                         st.success("Photo analysis complete ✅")
@@ -1000,7 +844,7 @@ if st.session_state.analysis_payload:
             st.markdown('<div class="section-intro">Review the summary, scan the strongest risks, and export a report when you want something shareable.</div>', unsafe_allow_html=True)
         with overview_action_col:
             try:
-                report_bytes = _fetch_report_bytes(payload["document_id"], st.session_state.auth_token)
+                report_bytes = _fetch_report_bytes(payload["document_id"])
                 st.download_button(
                     "Download PDF Report",
                     data=report_bytes,
@@ -1167,7 +1011,6 @@ if st.session_state.analysis_payload:
                                 "question": question,
                                 "document_id": st.session_state.document_id,
                             },
-                            headers=_auth_headers(),
                         )
 
                         result = response.json()
