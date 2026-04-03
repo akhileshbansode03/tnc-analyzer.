@@ -18,86 +18,88 @@ st.markdown(
 
     .stApp {
         background:
-            radial-gradient(circle at 12% 0%, rgba(56, 189, 248, 0.06), transparent 20%),
-            radial-gradient(circle at 88% 8%, rgba(45, 212, 191, 0.05), transparent 18%),
-            linear-gradient(180deg, #071019 0%, #0c1520 45%, #101a27 100%);
-        color: #edf3fb;
+            radial-gradient(circle at 12% 0%, rgba(15, 118, 110, 0.08), transparent 18%),
+            radial-gradient(circle at 88% 10%, rgba(217, 119, 6, 0.08), transparent 16%),
+            linear-gradient(180deg, #f7f4ec 0%, #f5f2ea 52%, #efeae0 100%);
+        color: #162033;
         font-family: 'Manrope', sans-serif;
     }
     .block-container {
         max-width: 100%;
         padding-top: 1rem;
         padding-bottom: 3.2rem;
-        padding-left: 2.2rem;
-        padding-right: 2.2rem;
+        padding-left: 2.6rem;
+        padding-right: 2.6rem;
     }
     [data-testid="stTabs"] button {
         border-radius: 999px !important;
-        border: 1px solid rgba(148,163,184,0.12) !important;
-        background: rgba(15,23,38,0.72) !important;
-        color: #d7e4f4 !important;
-        padding: 0.55rem 0.9rem !important;
+        border: 1px solid rgba(148,163,184,0.18) !important;
+        background: rgba(255,255,255,0.85) !important;
+        color: #314155 !important;
+        padding: 0.6rem 1rem !important;
         font-weight: 700 !important;
     }
     [data-testid="stTabs"] button[aria-selected="true"] {
-        background: linear-gradient(90deg, rgba(14,165,233,0.22), rgba(34,197,94,0.18)) !important;
-        border-color: rgba(56,189,248,0.28) !important;
-        color: #f4fbff !important;
+        background: linear-gradient(90deg, rgba(15,118,110,0.10), rgba(217,119,6,0.10)) !important;
+        border-color: rgba(15,118,110,0.22) !important;
+        color: #102032 !important;
     }
     .stButton > button {
         border-radius: 14px !important;
-        border: 1px solid rgba(96,165,250,0.18) !important;
-        background: linear-gradient(180deg, rgba(17,24,39,0.98), rgba(11,17,29,0.98)) !important;
-        color: #ecf4ff !important;
+        border: 1px solid rgba(15,118,110,0.18) !important;
+        background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(247,242,234,0.98)) !important;
+        color: #153243 !important;
         font-weight: 700 !important;
-        padding: 0.55rem 1rem !important;
+        padding: 0.62rem 1.05rem !important;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
     }
     .stButton > button:hover {
-        border-color: rgba(56,189,248,0.28) !important;
+        border-color: rgba(15,118,110,0.28) !important;
         transform: translateY(-1px);
     }
     .stTextInput input {
         border-radius: 14px !important;
-        background: rgba(13,19,31,0.95) !important;
-        color: #edf3fb !important;
-        border: 1px solid rgba(148,163,184,0.12) !important;
+        background: rgba(255,255,255,0.92) !important;
+        color: #122132 !important;
+        border: 1px solid rgba(148,163,184,0.18) !important;
     }
     h1, h2, h3, h4, p, div, span, label {
         font-family: 'Manrope', sans-serif !important;
     }
     .hero-card {
-        border: 1px solid rgba(125, 149, 181, 0.12);
+        border: 1px solid rgba(148, 163, 184, 0.16);
         background:
-            radial-gradient(circle at top right, rgba(56, 189, 248, 0.10), transparent 24%),
-            linear-gradient(180deg, rgba(16,22,32,0.96), rgba(12,18,28,0.98));
+            radial-gradient(circle at top right, rgba(15, 118, 110, 0.08), transparent 24%),
+            radial-gradient(circle at bottom left, rgba(217, 119, 6, 0.08), transparent 18%),
+            linear-gradient(180deg, rgba(255,255,255,0.94), rgba(248,244,237,0.96));
         border-radius: 28px;
         padding: 1.9rem 2rem 1.75rem;
-        box-shadow: 0 18px 44px rgba(0,0,0,0.20);
+        box-shadow: 0 18px 44px rgba(15,23,42,0.08);
         margin-bottom: 1.4rem;
     }
     .panel-card, .metric-card, .citation-card, .clause-card, .upload-card {
-        border: 1px solid rgba(120, 140, 170, 0.10);
-        background: linear-gradient(180deg, rgba(17,23,35,0.90), rgba(12,18,28,0.95));
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(249,245,238,0.96));
         border-radius: 22px;
         padding: 1.05rem 1.15rem;
-        box-shadow: 0 10px 24px rgba(0,0,0,0.14);
+        box-shadow: 0 10px 24px rgba(15,23,42,0.06);
     }
     .summary-card {
-        border: 1px solid rgba(120, 140, 170, 0.10);
+        border: 1px solid rgba(148, 163, 184, 0.12);
         background:
-            linear-gradient(180deg, rgba(18,25,39,0.94), rgba(12,18,28,0.96));
+            linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,244,237,0.96));
         border-radius: 24px;
         padding: 1.3rem 1.3rem 1.2rem;
-        box-shadow: 0 12px 28px rgba(0,0,0,0.14);
+        box-shadow: 0 12px 28px rgba(15,23,42,0.05);
     }
     .input-stage {
-        border: 1px solid rgba(120, 140, 170, 0.10);
+        border: 1px solid rgba(148, 163, 184, 0.12);
         background:
-            linear-gradient(180deg, rgba(15,22,34,0.94), rgba(12,18,28,0.96));
+            linear-gradient(180deg, rgba(255,255,255,0.94), rgba(247,242,234,0.96));
         border-radius: 26px;
         padding: 1.35rem;
         margin-bottom: 1.35rem;
-        box-shadow: 0 12px 28px rgba(0,0,0,0.14);
+        box-shadow: 0 12px 28px rgba(15,23,42,0.05);
     }
     .hero-title {
         font-size: 2.7rem;
@@ -106,9 +108,10 @@ st.markdown(
         letter-spacing: -0.03em;
         max-width: 760px;
         line-height: 1.05;
+        color: #132235;
     }
     .hero-subtitle {
-        color: #b7c4d6;
+        color: #53667b;
         margin: 0 0 1.2rem;
         max-width: 720px;
         line-height: 1.72;
@@ -120,9 +123,9 @@ st.markdown(
         padding: 0.28rem 0.7rem;
         font-size: 0.78rem;
         font-weight: 700;
-        color: #bfe7ff;
-        background: rgba(14,165,233,0.12);
-        border: 1px solid rgba(56,189,248,0.22);
+        color: #0f766e;
+        background: rgba(15,118,110,0.08);
+        border: 1px solid rgba(15,118,110,0.16);
         margin-bottom: 0.85rem;
     }
     .hero-support {
@@ -136,17 +139,18 @@ st.markdown(
         border-radius: 999px;
         padding: 0.34rem 0.78rem;
         font-size: 0.79rem;
-        color: #d0deef;
-        background: rgba(148,163,184,0.06);
-        border: 1px solid rgba(148,163,184,0.10);
+        color: #3d5269;
+        background: rgba(255,255,255,0.72);
+        border: 1px solid rgba(148,163,184,0.12);
     }
     .metric-value {
         font-size: 2rem;
         font-weight: 700;
         margin: 0;
+        color: #132235;
     }
     .metric-label {
-        color: #9fb1c8;
+        color: #6a7a8f;
         font-size: 0.86rem;
         margin-top: 0.2rem;
         text-transform: uppercase;
@@ -157,6 +161,7 @@ st.markdown(
         font-weight: 800;
         margin-bottom: 0.35rem;
         letter-spacing: -0.02em;
+        color: #132235;
     }
     .badge {
         display: inline-block;
@@ -167,35 +172,35 @@ st.markdown(
         margin-right: 0.4rem;
         margin-bottom: 0.35rem;
     }
-    .badge-high { background: rgba(220, 38, 38, 0.14); color: #fca5a5; border: 1px solid rgba(248,113,113,0.28); }
-    .badge-medium { background: rgba(245, 158, 11, 0.14); color: #fcd34d; border: 1px solid rgba(251,191,36,0.28); }
-    .badge-low { background: rgba(16, 185, 129, 0.14); color: #86efac; border: 1px solid rgba(52,211,153,0.28); }
-    .badge-neutral { background: rgba(96, 165, 250, 0.12); color: #bfdbfe; border: 1px solid rgba(96,165,250,0.25); }
+    .badge-high { background: rgba(220, 38, 38, 0.10); color: #991b1b; border: 1px solid rgba(220,38,38,0.14); }
+    .badge-medium { background: rgba(245, 158, 11, 0.12); color: #9a5c00; border: 1px solid rgba(245,158,11,0.16); }
+    .badge-low { background: rgba(15, 118, 110, 0.10); color: #0f766e; border: 1px solid rgba(15,118,110,0.14); }
+    .badge-neutral { background: rgba(59, 130, 246, 0.08); color: #1d4ed8; border: 1px solid rgba(59,130,246,0.12); }
     mark {
-        background: rgba(251, 191, 36, 0.18);
-        color: #fde68a;
+        background: rgba(245, 158, 11, 0.16);
+        color: #92400e;
         padding: 0.05rem 0.18rem;
         border-radius: 0.2rem;
     }
-    .muted { color: #93a3b8; font-size: 0.88rem; }
+    .muted { color: #6f8095; font-size: 0.88rem; }
     .answer-box {
-        border: 1px solid rgba(96, 165, 250, 0.14);
+        border: 1px solid rgba(15, 118, 110, 0.12);
         background:
-            radial-gradient(circle at top right, rgba(96, 165, 250, 0.07), transparent 26%),
-            linear-gradient(180deg, rgba(16,23,35,0.96), rgba(11,17,28,0.98));
+            radial-gradient(circle at top right, rgba(15, 118, 110, 0.05), transparent 26%),
+            linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,244,237,0.98));
         padding: 1.1rem 1.2rem;
         margin-top: 0.35rem;
         border-radius: 22px;
     }
     .section-intro {
-        color: #96a9c3;
+        color: #66788d;
         font-size: 0.92rem;
         margin-top: -0.02rem;
         margin-bottom: 0.8rem;
         line-height: 1.55;
     }
     .input-mode-note {
-        color: #9ab0c8;
+        color: #6e8093;
         font-size: 0.88rem;
         margin-top: 0.2rem;
     }
@@ -209,16 +214,16 @@ st.markdown(
     .mini-card {
         border-radius: 20px;
         padding: 1rem;
-        background: rgba(148,163,184,0.03);
-        border: 1px solid rgba(148,163,184,0.06);
+        background: rgba(255,255,255,0.65);
+        border: 1px solid rgba(148,163,184,0.10);
     }
     .mini-title {
         font-weight: 700;
         margin-bottom: 0.3rem;
-        color: #e8eef8;
+        color: #18283a;
     }
     .mini-copy {
-        color: #9cb0c8;
+        color: #66788d;
         font-size: 0.88rem;
         line-height: 1.5;
     }
@@ -230,13 +235,13 @@ st.markdown(
     }
     .hero-side {
         border-radius: 24px;
-        border: 1px solid rgba(148,163,184,0.08);
-        background: rgba(148,163,184,0.03);
+        border: 1px solid rgba(148,163,184,0.10);
+        background: rgba(255,255,255,0.62);
         padding: 1.05rem 1.05rem 0.95rem;
     }
     .hero-side-title {
         font-size: 0.85rem;
-        color: #9fb1c8;
+        color: #60748b;
         text-transform: uppercase;
         letter-spacing: 0.08em;
         margin-bottom: 0.7rem;
@@ -246,27 +251,27 @@ st.markdown(
         justify-content: space-between;
         padding: 0.62rem 0;
         border-bottom: 1px solid rgba(148,163,184,0.08);
-        color: #d7e4f4;
+        color: #1d2b3a;
         font-size: 0.95rem;
     }
     .hero-side-item:last-child {
         border-bottom: none;
     }
     .hero-side-soft {
-        color: #8fa4bf;
+        color: #6d8095;
     }
     .risk-spotlight {
         border-radius: 22px;
         padding: 1.05rem;
         margin-bottom: 0.9rem;
-        border: 1px solid rgba(148,163,184,0.08);
-        background: linear-gradient(180deg, rgba(17,24,36,0.92), rgba(12,18,28,0.96));
+        border: 1px solid rgba(148,163,184,0.10);
+        background: linear-gradient(180deg, rgba(255,255,255,0.90), rgba(248,244,237,0.96));
     }
     .risk-spotlight.high {
-        box-shadow: inset 0 0 0 1px rgba(248,113,113,0.14);
+        box-shadow: inset 0 0 0 1px rgba(220,38,38,0.10);
     }
     .risk-spotlight.medium {
-        box-shadow: inset 0 0 0 1px rgba(251,191,36,0.10);
+        box-shadow: inset 0 0 0 1px rgba(245,158,11,0.10);
     }
     .summary-shell {
         display: grid;
@@ -274,14 +279,14 @@ st.markdown(
         gap: 1rem;
     }
     .chat-shell {
-        border: 1px solid rgba(120, 140, 170, 0.10);
-        background: linear-gradient(180deg, rgba(15,22,34,0.94), rgba(11,17,28,0.96));
+        border: 1px solid rgba(148,163,184,0.10);
+        background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(248,244,237,0.96));
         border-radius: 24px;
         padding: 1.15rem 1.2rem;
     }
     .detail-toggle-shell {
-        border: 1px solid rgba(120, 140, 170, 0.10);
-        background: linear-gradient(180deg, rgba(14,21,34,0.88), rgba(10,16,28,0.94));
+        border: 1px solid rgba(148,163,184,0.10);
+        background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(248,244,237,0.94));
         border-radius: 22px;
         padding: 1rem 1.1rem;
         margin-top: 1.3rem;
