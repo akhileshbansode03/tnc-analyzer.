@@ -170,6 +170,9 @@ if "document_id" not in st.session_state:
 if "analysis_payload" not in st.session_state:
     st.session_state.analysis_payload = None
 
+if "reading_mode" not in st.session_state:
+    st.session_state.reading_mode = "Simple"
+
 
 # -------------------------------
 # FILE UPLOAD
@@ -209,6 +212,24 @@ if st.session_state.analysis_payload:
     payload = st.session_state.analysis_payload
     top_clauses = _dedupe_clauses(payload["clauses"], limit=6)
 
+    mode_col, _ = st.columns([0.45, 0.55])
+    with mode_col:
+        st.session_state.reading_mode = st.radio(
+            "Reading mode",
+            ["Standard", "Simple", "10-Year-Old"],
+            horizontal=True,
+        )
+
+    if st.session_state.reading_mode == "Standard":
+        summary_text = payload["formatted_output"]
+        clause_explanation_key = "reason"
+    elif st.session_state.reading_mode == "10-Year-Old":
+        summary_text = payload["child_friendly_summary"]
+        clause_explanation_key = "child_friendly_explanation"
+    else:
+        summary_text = payload["simple_summary"]
+        clause_explanation_key = "simple_explanation"
+
     metric_cols = st.columns(4)
     metrics = [
         ("High Risk", payload["risk_overview"]["high"]),
@@ -233,7 +254,7 @@ if st.session_state.analysis_payload:
     with left_col:
         st.markdown('<div class="section-label">Executive Summary</div>', unsafe_allow_html=True)
         st.markdown(
-            f'<div class="panel-card"><pre style="white-space:pre-wrap;font-family:inherit;margin:0;">{html.escape(payload["formatted_output"])}</pre></div>',
+            f'<div class="panel-card"><pre style="white-space:pre-wrap;font-family:inherit;margin:0;">{html.escape(summary_text)}</pre></div>',
             unsafe_allow_html=True,
         )
 
@@ -249,7 +270,7 @@ if st.session_state.analysis_payload:
                 f"""
                 <div class="panel-card" style="margin-bottom:0.8rem;">
                     {badges}
-                    <div style="margin-top:0.45rem;font-weight:600;">{html.escape(clause["reason"])}</div>
+                    <div style="margin-top:0.45rem;font-weight:600;">{html.escape(clause[clause_explanation_key])}</div>
                     <div class="muted" style="margin-top:0.45rem;">Page {clause['page_number']} | Confidence {clause['confidence']}</div>
                 </div>
                 """,
@@ -272,7 +293,7 @@ if st.session_state.analysis_payload:
                 {badges}
                 <div class="muted" style="margin-top:0.4rem;">Page {clause['page_number']} | Category confidence {clause['category_confidence']}</div>
                 <div style="margin-top:0.85rem; line-height:1.65;">{highlighted}</div>
-                <div class="muted" style="margin-top:0.8rem;">Why flagged: {html.escape(clause['reason'])}</div>
+                <div class="muted" style="margin-top:0.8rem;">Why flagged: {html.escape(clause[clause_explanation_key])}</div>
                 <div class="muted" style="margin-top:0.25rem;">Highlighted phrases: {html.escape(terms)}</div>
             </div>
             """,
