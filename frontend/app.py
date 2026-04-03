@@ -26,9 +26,40 @@ st.markdown(
         font-family: 'Manrope', sans-serif;
     }
     .block-container {
-        max-width: 1120px;
-        padding-top: 1.4rem;
+        max-width: 1360px;
+        padding-top: 1.2rem;
         padding-bottom: 3rem;
+    }
+    [data-testid="stTabs"] button {
+        border-radius: 999px !important;
+        border: 1px solid rgba(148,163,184,0.12) !important;
+        background: rgba(15,23,38,0.72) !important;
+        color: #d7e4f4 !important;
+        padding: 0.55rem 0.9rem !important;
+        font-weight: 700 !important;
+    }
+    [data-testid="stTabs"] button[aria-selected="true"] {
+        background: linear-gradient(90deg, rgba(14,165,233,0.22), rgba(34,197,94,0.18)) !important;
+        border-color: rgba(56,189,248,0.28) !important;
+        color: #f4fbff !important;
+    }
+    .stButton > button {
+        border-radius: 14px !important;
+        border: 1px solid rgba(96,165,250,0.18) !important;
+        background: linear-gradient(180deg, rgba(17,24,39,0.98), rgba(11,17,29,0.98)) !important;
+        color: #ecf4ff !important;
+        font-weight: 700 !important;
+        padding: 0.55rem 1rem !important;
+    }
+    .stButton > button:hover {
+        border-color: rgba(56,189,248,0.28) !important;
+        transform: translateY(-1px);
+    }
+    .stTextInput input {
+        border-radius: 14px !important;
+        background: rgba(13,19,31,0.95) !important;
+        color: #edf3fb !important;
+        border: 1px solid rgba(148,163,184,0.12) !important;
     }
     h1, h2, h3, h4, p, div, span, label {
         font-family: 'Manrope', sans-serif !important;
@@ -248,8 +279,21 @@ st.markdown(
         border-radius: 24px;
         padding: 1rem 1.1rem;
     }
+    .detail-toggle-shell {
+        border: 1px solid rgba(120, 140, 170, 0.12);
+        background: linear-gradient(180deg, rgba(14,21,34,0.9), rgba(10,16,28,0.96));
+        border-radius: 22px;
+        padding: 1rem 1.1rem 0.9rem;
+        margin-top: 1.15rem;
+    }
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.95rem;
+        margin-top: 0.85rem;
+    }
     @media (max-width: 900px) {
-        .hero-layout, .summary-shell, .mini-grid {
+        .hero-layout, .summary-shell, .mini-grid, .detail-grid {
             grid-template-columns: 1fr;
         }
         .hero-title {
@@ -487,6 +531,7 @@ with input_tab_images:
 if st.session_state.analysis_payload:
     payload = st.session_state.analysis_payload
     top_clauses = _dedupe_clauses(payload["clauses"], limit=6)
+    deep_clauses = _dedupe_clauses(payload["clauses"], limit=12)
     summary_text = payload["formatted_output"]
     clause_explanation_key = "reason"
 
@@ -539,9 +584,19 @@ if st.session_state.analysis_payload:
                 unsafe_allow_html=True,
             )
 
-    with st.expander(f"See detailed clause risk review ({len(top_clauses)} clauses)", expanded=False):
-        st.markdown('<div class="section-intro">Open this only when you want to inspect individual clauses in more detail.</div>', unsafe_allow_html=True)
-        for clause in top_clauses:
+    st.markdown(
+        """
+        <div class="detail-toggle-shell">
+            <div class="section-label">Clause-By-Clause Deep Dive</div>
+            <div class="section-intro">Keep this closed for a cleaner dashboard. Open it only when you want to inspect the detailed clause breakdown.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    show_clause_review = st.toggle("Show detailed clause risk review", value=False)
+    if show_clause_review:
+        clause_columns = st.columns(2, gap="large")
+        for index, clause in enumerate(deep_clauses):
             badges = (
                 _risk_badge(clause["risk"])
                 + _neutral_badge(f"Score {clause['risk_score']}/10")
@@ -550,18 +605,19 @@ if st.session_state.analysis_payload:
             )
             highlighted = _highlight_clause(clause["clause"][:420], clause.get("highlighted_terms", []))
             terms = ", ".join(clause.get("highlighted_terms", [])[:5]) or "No explicit trigger terms"
-            st.markdown(
-                f"""
-                <div class="clause-card" style="margin-bottom:0.85rem;">
-                    {badges}
-                    <div class="muted" style="margin-top:0.4rem;">Page {clause['page_number']} | Category confidence {clause['category_confidence']}</div>
-                    <div style="margin-top:0.85rem; line-height:1.65;">{highlighted}</div>
-                    <div class="muted" style="margin-top:0.8rem;">Why flagged: {html.escape(clause[clause_explanation_key])}</div>
-                    <div class="muted" style="margin-top:0.25rem;">Highlighted phrases: {html.escape(terms)}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            with clause_columns[index % 2]:
+                st.markdown(
+                    f"""
+                    <div class="clause-card" style="margin-bottom:0.95rem;">
+                        {badges}
+                        <div class="muted" style="margin-top:0.4rem;">Page {clause['page_number']} | Category confidence {clause['category_confidence']}</div>
+                        <div style="margin-top:0.85rem; line-height:1.65;">{highlighted}</div>
+                        <div class="muted" style="margin-top:0.8rem;">Why flagged: {html.escape(clause[clause_explanation_key])}</div>
+                        <div class="muted" style="margin-top:0.25rem;">Highlighted phrases: {html.escape(terms)}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
 
 # -------------------------------
