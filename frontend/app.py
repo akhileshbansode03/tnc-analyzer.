@@ -291,6 +291,14 @@ st.markdown(
         padding: 1rem 1.1rem;
         margin-top: 1.3rem;
     }
+    .nav-shell {
+        border: 1px solid rgba(148,163,184,0.10);
+        background: rgba(255,255,255,0.58);
+        border-radius: 26px;
+        padding: 1rem 1.1rem 0.7rem;
+        margin-top: 1.3rem;
+        margin-bottom: 1.1rem;
+    }
     @media (max-width: 900px) {
         .hero-layout, .summary-shell, .mini-grid {
             grid-template-columns: 1fr;
@@ -537,68 +545,65 @@ if st.session_state.analysis_payload:
     deep_clauses = _dedupe_clauses(payload["clauses"], limit=12)
     summary_text = payload["formatted_output"]
     clause_explanation_key = "reason"
-
-    metric_cols = st.columns(4)
-    metrics = [
-        ("High Risk", payload["risk_overview"]["high"]),
-        ("Medium Risk", payload["risk_overview"]["medium"]),
-        ("Low Risk", payload["risk_overview"]["low"]),
-        ("Clauses Reviewed", len(payload["clauses"])),
-    ]
-    for col, (label, value) in zip(metric_cols, metrics):
-        with col:
-            st.markdown(
-                f"""
-                <div class="metric-card">
-                    <p class="metric-value">{value}</p>
-                    <div class="metric-label">{label}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-    left_col, right_col = st.columns([1.1, 0.9], gap="large")
-
-    with left_col:
-        st.markdown('<div class="section-label">Executive Summary</div>', unsafe_allow_html=True)
-        st.markdown('<div class="section-intro">The fast read: what this document is about and where the main risks sit.</div>', unsafe_allow_html=True)
-        st.markdown(
-            f'<div class="summary-card"><pre style="white-space:pre-wrap;font-family:inherit;margin:0;line-height:1.7;">{html.escape(summary_text)}</pre></div>',
-            unsafe_allow_html=True,
-        )
-
-    with right_col:
-        st.markdown('<div class="section-label">Top Risk Signals</div>', unsafe_allow_html=True)
-        st.markdown('<div class="section-intro">The three clauses most likely to affect the user.</div>', unsafe_allow_html=True)
-        for clause in top_clauses[:3]:
-            badges = (
-                _risk_badge(clause["risk"])
-                + _neutral_badge(f"Score {clause['risk_score']}/10")
-                + _neutral_badge(_display_category(clause["category"]))
-            )
-            st.markdown(
-                f"""
-                <div class="risk-spotlight {'high' if clause['risk']=='HIGH' else 'medium'}">
-                    {badges}
-                    <div style="margin-top:0.45rem;font-weight:600;">{html.escape(clause[clause_explanation_key])}</div>
-                    <div class="muted" style="margin-top:0.45rem;">Page {clause['page_number']} | Confidence {clause['confidence']}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-    st.markdown(
-        """
-        <div class="detail-toggle-shell">
-            <div class="section-label">Clause-By-Clause Deep Dive</div>
-            <div class="section-intro">Keep this closed for a cleaner dashboard. Open it only when you want to inspect the detailed clause breakdown.</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    st.markdown('<div class="nav-shell">', unsafe_allow_html=True)
+    result_tab_overview, result_tab_deep_dive, result_tab_chat = st.tabs(
+        ["Overview", "Deep Dive", "Chat"]
     )
-    show_clause_review = st.toggle("Show detailed clause risk review", value=False)
-    if show_clause_review:
-        st.markdown('<div class="section-intro">Detailed clause review is optional and meant for users who want to inspect the evidence behind the scoring.</div>', unsafe_allow_html=True)
+
+    with result_tab_overview:
+        metric_cols = st.columns(4, gap="large")
+        metrics = [
+            ("High Risk", payload["risk_overview"]["high"]),
+            ("Medium Risk", payload["risk_overview"]["medium"]),
+            ("Low Risk", payload["risk_overview"]["low"]),
+            ("Clauses Reviewed", len(payload["clauses"])),
+        ]
+        for col, (label, value) in zip(metric_cols, metrics):
+            with col:
+                st.markdown(
+                    f"""
+                    <div class="metric-card">
+                        <p class="metric-value">{value}</p>
+                        <div class="metric-label">{label}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+        st.markdown("<div style='height:1.4rem;'></div>", unsafe_allow_html=True)
+        left_col, right_col = st.columns([1.12, 0.88], gap="large")
+
+        with left_col:
+            st.markdown('<div class="section-label">Executive Summary</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-intro">Start here for the short version of what the document does, what can change, and where the biggest user impact sits.</div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="summary-card"><pre style="white-space:pre-wrap;font-family:inherit;margin:0;line-height:1.82;">{html.escape(summary_text)}</pre></div>',
+                unsafe_allow_html=True,
+            )
+
+        with right_col:
+            st.markdown('<div class="section-label">Top Risk Signals</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-intro">The strongest watch-outs, surfaced before the user has to read deeper.</div>', unsafe_allow_html=True)
+            for clause in top_clauses[:3]:
+                badges = (
+                    _risk_badge(clause["risk"])
+                    + _neutral_badge(f"Score {clause['risk_score']}/10")
+                    + _neutral_badge(_display_category(clause["category"]))
+                )
+                st.markdown(
+                    f"""
+                    <div class="risk-spotlight {'high' if clause['risk']=='HIGH' else 'medium'}">
+                        {badges}
+                        <div style="margin-top:0.6rem;font-weight:600;line-height:1.7;">{html.escape(clause[clause_explanation_key])}</div>
+                        <div class="muted" style="margin-top:0.55rem;">Page {clause['page_number']} | Confidence {clause['confidence']}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+    with result_tab_deep_dive:
+        st.markdown('<div class="section-label">Clause-By-Clause Deep Dive</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-intro">This section is for careful readers who want the actual supporting clauses, trigger phrases, and risk reasoning. It is intentionally separate so the main dashboard stays breathable.</div>', unsafe_allow_html=True)
         clause_columns = st.columns([1, 1], gap="large")
         for index, clause in enumerate(deep_clauses):
             badges = (
@@ -607,83 +612,89 @@ if st.session_state.analysis_payload:
                 + _neutral_badge(f"Confidence {clause['confidence']}")
                 + _neutral_badge(_display_category(clause["category"]))
             )
-            highlighted = _highlight_clause(clause["clause"][:360], clause.get("highlighted_terms", []))
+            highlighted = _highlight_clause(clause["clause"][:420], clause.get("highlighted_terms", []))
             terms = ", ".join(clause.get("highlighted_terms", [])[:5]) or "No explicit trigger terms"
             with clause_columns[index % 2]:
                 st.markdown(
                     f"""
-                    <div class="clause-card" style="margin-bottom:0.95rem;">
+                    <div class="clause-card" style="margin-bottom:1.15rem;">
                         {badges}
-                        <div class="muted" style="margin-top:0.4rem;">Page {clause['page_number']} | Category confidence {clause['category_confidence']}</div>
-                        <div style="margin-top:0.75rem; line-height:1.72;">{highlighted}</div>
-                        <div class="muted" style="margin-top:0.9rem;">Why flagged: {html.escape(clause[clause_explanation_key])}</div>
-                        <div class="muted" style="margin-top:0.3rem;">Key phrases: {html.escape(terms)}</div>
+                        <div class="muted" style="margin-top:0.5rem;">Page {clause['page_number']} | Category confidence {clause['category_confidence']}</div>
+                        <div style="margin-top:0.9rem; line-height:1.82;">{highlighted}</div>
+                        <div class="muted" style="margin-top:1rem;">Why flagged: {html.escape(clause[clause_explanation_key])}</div>
+                        <div class="muted" style="margin-top:0.35rem;">Key phrases: {html.escape(terms)}</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
 
+    with result_tab_chat:
+        st.markdown('<div class="section-label">Chat With Document</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-intro">Ask direct questions in your own words. The app answers using retrieved evidence so the user can verify the result instead of blindly trusting it.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chat-shell">', unsafe_allow_html=True)
 
-# -------------------------------
-# Q&A SECTION
-# -------------------------------
-st.markdown('<div class="section-label" style="margin-top:1.4rem;">Chat With Document</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-intro">Ask direct questions in your own words. The app answers with retrieved document evidence so the user can verify the result.</div>', unsafe_allow_html=True)
-st.markdown('<div class="chat-shell">', unsafe_allow_html=True)
+        question = st.text_input("Ask something about the document", key="document_question")
 
-if not st.session_state.document_loaded:
-    st.warning("⚠️ Please upload and analyze a document first.")
-else:
-    question = st.text_input("Ask something about the document")
-
-    if st.button("Ask"):
-        if not question.strip():
-            st.warning("Please enter a question")
-        else:
-            with st.spinner("Thinking... 🤖"):
-                try:
-                    response = requests.post(
-                        API_ASK,
-                        json={
-                            "question": question,
-                            "document_id": st.session_state.document_id,
-                        }
-                    )
-
-                    result = response.json()
-
-                    if "detail" in result:
-                        st.error(result["detail"])
-                    else:
-                        status_label = "Grounded" if result["grounded"] else "Low support"
-                        st.markdown(
-                            f"""
-                            <div class="panel-card answer-box">
-                                <div class="section-label" style="margin-bottom:0.35rem;">Answer</div>
-                                <div style="line-height:1.7;">{html.escape(result["answer"])}</div>
-                                <div class="muted" style="margin-top:0.75rem;">{status_label} | Confidence {result['confidence']:.2f}</div>
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
+        if st.button("Ask", key="document_question_submit"):
+            if not question.strip():
+                st.warning("Please enter a question")
+            else:
+                with st.spinner("Thinking..."):
+                    try:
+                        response = requests.post(
+                            API_ASK,
+                            json={
+                                "question": question,
+                                "document_id": st.session_state.document_id,
+                            }
                         )
 
-                        st.markdown('<div class="section-label" style="margin-top:0.9rem;">Citations</div>', unsafe_allow_html=True)
-                        citation_columns = st.columns(2, gap="large")
-                        for index, ev in enumerate(result["citations"]):
-                            with citation_columns[index % 2]:
-                                st.markdown(
-                                    f"""
-                                    <div class="citation-card" style="margin-bottom:0.75rem;">
-                                        {_neutral_badge(f"Page {ev['page_number']}")}
-                                        {_neutral_badge(f"Chunk {ev['chunk_id'] + 1}")}
-                                        {_neutral_badge(f"Relevance {ev['relevance_score']:.2f}")}
-                                        <div style="margin-top:0.72rem; line-height:1.68;">{html.escape(ev['text'][:300])}</div>
-                                    </div>
-                                    """,
-                                    unsafe_allow_html=True,
-                                )
+                        result = response.json()
 
-                except Exception as e:
-                    st.error(f"Connection Error: {e}")
+                        if "detail" in result:
+                            st.error(result["detail"])
+                        else:
+                            status_label = "Grounded" if result["grounded"] else "Low support"
+                            st.markdown(
+                                f"""
+                                <div class="panel-card answer-box">
+                                    <div class="section-label" style="margin-bottom:0.35rem;">Answer</div>
+                                    <div style="line-height:1.82;">{html.escape(result["answer"])}</div>
+                                    <div class="muted" style="margin-top:0.82rem;">{status_label} | Confidence {result['confidence']:.2f}</div>
+                                </div>
+                                """,
+                                unsafe_allow_html=True,
+                            )
 
-st.markdown('</div>', unsafe_allow_html=True)
+                            st.markdown('<div class="section-label" style="margin-top:1rem;">Citations</div>', unsafe_allow_html=True)
+                            st.markdown('<div class="section-intro">These are the exact chunks used to support the answer.</div>', unsafe_allow_html=True)
+                            citation_columns = st.columns(2, gap="large")
+                            for index, ev in enumerate(result["citations"]):
+                                with citation_columns[index % 2]:
+                                    st.markdown(
+                                        f"""
+                                        <div class="citation-card" style="margin-bottom:0.95rem;">
+                                            {_neutral_badge(f"Page {ev['page_number']}")}
+                                            {_neutral_badge(f"Chunk {ev['chunk_id'] + 1}")}
+                                            {_neutral_badge(f"Relevance {ev['relevance_score']:.2f}")}
+                                            <div style="margin-top:0.8rem; line-height:1.72;">{html.escape(ev['text'][:320])}</div>
+                                        </div>
+                                        """,
+                                        unsafe_allow_html=True,
+                                    )
+
+                    except Exception as e:
+                        st.error(f"Connection Error: {e}")
+
+        st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+else:
+    st.markdown(
+        """
+        <div class="nav-shell">
+            <div class="section-label">Results Workspace</div>
+            <div class="section-intro">Upload a PDF, paste a document link, or add document photos to unlock the overview, deep-dive review, and chat workspace.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
