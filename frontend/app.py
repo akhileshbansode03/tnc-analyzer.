@@ -18,115 +18,128 @@ st.markdown(
 
     .stApp {
         background:
-            radial-gradient(circle at 12% 0%, rgba(15, 118, 110, 0.08), transparent 18%),
-            radial-gradient(circle at 88% 10%, rgba(217, 119, 6, 0.08), transparent 16%),
-            linear-gradient(180deg, #f7f4ec 0%, #f5f2ea 52%, #efeae0 100%);
+            radial-gradient(circle at 10% 0%, rgba(13, 148, 136, 0.12), transparent 22%),
+            radial-gradient(circle at 90% 12%, rgba(251, 146, 60, 0.10), transparent 18%),
+            linear-gradient(180deg, #f8f3ea 0%, #f4efe6 40%, #efe8db 100%);
         color: #162033;
         font-family: 'Manrope', sans-serif;
     }
     .block-container {
         max-width: 100%;
-        padding-top: 1rem;
-        padding-bottom: 3.2rem;
-        padding-left: 2.6rem;
-        padding-right: 2.6rem;
+        padding-top: 0.45rem;
+        padding-bottom: 4.2rem;
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+    header[data-testid="stHeader"] {
+        background: transparent;
+    }
+    [data-testid="stToolbar"] {
+        right: 1.2rem;
+        top: 1rem;
     }
     [data-testid="stTabs"] button {
         border-radius: 999px !important;
-        border: 1px solid rgba(148,163,184,0.18) !important;
-        background: rgba(255,255,255,0.85) !important;
+        border: 1px solid rgba(148,163,184,0.14) !important;
+        background: rgba(255,251,247,0.78) !important;
         color: #314155 !important;
-        padding: 0.6rem 1rem !important;
+        padding: 0.8rem 1.15rem !important;
         font-weight: 700 !important;
+        font-size: 0.95rem !important;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
     }
     [data-testid="stTabs"] button[aria-selected="true"] {
-        background: linear-gradient(90deg, rgba(15,118,110,0.10), rgba(217,119,6,0.10)) !important;
-        border-color: rgba(15,118,110,0.22) !important;
-        color: #102032 !important;
+        background: linear-gradient(135deg, rgba(11, 31, 58, 0.96), rgba(26, 48, 83, 0.98)) !important;
+        border-color: rgba(11,31,58,0.10) !important;
+        color: #f8f3ea !important;
+        box-shadow: 0 16px 30px rgba(11, 31, 58, 0.18);
     }
     .stButton > button {
-        border-radius: 14px !important;
-        border: 1px solid rgba(15,118,110,0.18) !important;
-        background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(247,242,234,0.98)) !important;
-        color: #153243 !important;
+        border-radius: 16px !important;
+        border: 1px solid rgba(11,31,58,0.14) !important;
+        background: linear-gradient(135deg, #0f2747, #1a3a66) !important;
+        color: #f9f4eb !important;
         font-weight: 700 !important;
-        padding: 0.62rem 1.05rem !important;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+        padding: 0.8rem 1.25rem !important;
+        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
     }
     .stButton > button:hover {
-        border-color: rgba(15,118,110,0.28) !important;
-        transform: translateY(-1px);
+        border-color: rgba(11,31,58,0.24) !important;
+        transform: translateY(-2px);
     }
     .stTextInput input {
-        border-radius: 14px !important;
-        background: rgba(255,255,255,0.92) !important;
+        border-radius: 16px !important;
+        background: rgba(255,252,248,0.95) !important;
         color: #122132 !important;
-        border: 1px solid rgba(148,163,184,0.18) !important;
+        border: 1px solid rgba(148,163,184,0.14) !important;
+        min-height: 3rem;
     }
     h1, h2, h3, h4, p, div, span, label {
         font-family: 'Manrope', sans-serif !important;
     }
     .hero-card {
-        border: 1px solid rgba(148, 163, 184, 0.16);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         background:
-            radial-gradient(circle at top right, rgba(15, 118, 110, 0.08), transparent 24%),
-            radial-gradient(circle at bottom left, rgba(217, 119, 6, 0.08), transparent 18%),
-            linear-gradient(180deg, rgba(255,255,255,0.94), rgba(248,244,237,0.96));
-        border-radius: 28px;
-        padding: 1.9rem 2rem 1.75rem;
-        box-shadow: 0 18px 44px rgba(15,23,42,0.08);
-        margin-bottom: 1.4rem;
+            radial-gradient(circle at top right, rgba(45, 212, 191, 0.14), transparent 22%),
+            radial-gradient(circle at bottom left, rgba(251, 146, 60, 0.14), transparent 20%),
+            linear-gradient(135deg, #081223 0%, #11243f 48%, #183458 100%);
+        border-radius: 34px;
+        padding: 2.8rem 2.8rem 2.5rem;
+        box-shadow: 0 28px 60px rgba(9, 18, 35, 0.22);
+        margin-bottom: 1.9rem;
+        overflow: hidden;
     }
     .panel-card, .metric-card, .citation-card, .clause-card, .upload-card {
-        border: 1px solid rgba(148, 163, 184, 0.12);
-        background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(249,245,238,0.96));
-        border-radius: 22px;
-        padding: 1.05rem 1.15rem;
-        box-shadow: 0 10px 24px rgba(15,23,42,0.06);
+        border: 1px solid rgba(148, 163, 184, 0.11);
+        background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(251,248,242,0.98));
+        border-radius: 26px;
+        padding: 1.25rem 1.3rem;
+        box-shadow: 0 14px 30px rgba(15,23,42,0.06);
     }
     .summary-card {
-        border: 1px solid rgba(148, 163, 184, 0.12);
+        border: 1px solid rgba(148, 163, 184, 0.10);
         background:
-            linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,244,237,0.96));
-        border-radius: 24px;
-        padding: 1.3rem 1.3rem 1.2rem;
-        box-shadow: 0 12px 28px rgba(15,23,42,0.05);
+            linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,247,241,0.98));
+        border-radius: 28px;
+        padding: 1.6rem;
+        box-shadow: 0 16px 34px rgba(15,23,42,0.05);
     }
     .input-stage {
-        border: 1px solid rgba(148, 163, 184, 0.12);
+        border: 1px solid rgba(148, 163, 184, 0.10);
         background:
-            linear-gradient(180deg, rgba(255,255,255,0.94), rgba(247,242,234,0.96));
-        border-radius: 26px;
-        padding: 1.35rem;
-        margin-bottom: 1.35rem;
-        box-shadow: 0 12px 28px rgba(15,23,42,0.05);
+            radial-gradient(circle at top right, rgba(13,148,136,0.06), transparent 26%),
+            linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,244,237,0.98));
+        border-radius: 32px;
+        padding: 1.85rem;
+        margin-bottom: 1.6rem;
+        box-shadow: 0 16px 36px rgba(15,23,42,0.06);
     }
     .hero-title {
-        font-size: 2.7rem;
+        font-size: 4.1rem;
         font-weight: 800;
-        margin-bottom: 0.55rem;
+        margin-bottom: 0.8rem;
         letter-spacing: -0.03em;
         max-width: 760px;
-        line-height: 1.05;
-        color: #132235;
+        line-height: 0.96;
+        color: #f7f2e9;
     }
     .hero-subtitle {
-        color: #53667b;
-        margin: 0 0 1.2rem;
-        max-width: 720px;
-        line-height: 1.72;
-        font-size: 1rem;
+        color: rgba(236, 242, 250, 0.76);
+        margin: 0 0 1.5rem;
+        max-width: 660px;
+        line-height: 1.75;
+        font-size: 1.08rem;
     }
     .hero-kicker {
         display: inline-block;
         border-radius: 999px;
-        padding: 0.28rem 0.7rem;
+        padding: 0.4rem 0.82rem;
         font-size: 0.78rem;
         font-weight: 700;
-        color: #0f766e;
-        background: rgba(15,118,110,0.08);
-        border: 1px solid rgba(15,118,110,0.16);
-        margin-bottom: 0.85rem;
+        color: #d9fff7;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.12);
+        margin-bottom: 1rem;
     }
     .hero-support {
         display: inline-flex;
@@ -137,14 +150,14 @@ st.markdown(
     }
     .hero-pill {
         border-radius: 999px;
-        padding: 0.34rem 0.78rem;
+        padding: 0.42rem 0.9rem;
         font-size: 0.79rem;
-        color: #3d5269;
-        background: rgba(255,255,255,0.72);
-        border: 1px solid rgba(148,163,184,0.12);
+        color: rgba(244,248,252,0.88);
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.10);
     }
     .metric-value {
-        font-size: 2rem;
+        font-size: 2.45rem;
         font-weight: 700;
         margin: 0;
         color: #132235;
@@ -157,9 +170,9 @@ st.markdown(
         letter-spacing: 0.06em;
     }
     .section-label {
-        font-size: 1.18rem;
+        font-size: 1.4rem;
         font-weight: 800;
-        margin-bottom: 0.35rem;
+        margin-bottom: 0.45rem;
         letter-spacing: -0.02em;
         color: #132235;
     }
@@ -194,10 +207,10 @@ st.markdown(
     }
     .section-intro {
         color: #66788d;
-        font-size: 0.92rem;
+        font-size: 1rem;
         margin-top: -0.02rem;
-        margin-bottom: 0.8rem;
-        line-height: 1.55;
+        margin-bottom: 1rem;
+        line-height: 1.7;
     }
     .input-mode-note {
         color: #6e8093;
@@ -207,15 +220,16 @@ st.markdown(
     .mini-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 1rem;
-        margin-top: 1rem;
+        gap: 1.15rem;
+        margin-top: 1.15rem;
         margin-bottom: 0.3rem;
     }
     .mini-card {
-        border-radius: 20px;
-        padding: 1rem;
-        background: rgba(255,255,255,0.65);
-        border: 1px solid rgba(148,163,184,0.10);
+        border-radius: 24px;
+        padding: 1.2rem;
+        background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(248,243,235,0.92));
+        border: 1px solid rgba(148,163,184,0.09);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.45);
     }
     .mini-title {
         font-weight: 700;
@@ -229,43 +243,46 @@ st.markdown(
     }
     .hero-layout {
         display: grid;
-        grid-template-columns: 1.15fr 0.85fr;
-        gap: 1.6rem;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 2rem;
         align-items: stretch;
     }
     .hero-side {
-        border-radius: 24px;
-        border: 1px solid rgba(148,163,184,0.10);
-        background: rgba(255,255,255,0.62);
-        padding: 1.05rem 1.05rem 0.95rem;
+        border-radius: 28px;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.04));
+        padding: 1.3rem 1.35rem 1.1rem;
+        backdrop-filter: blur(14px);
     }
     .hero-side-title {
         font-size: 0.85rem;
-        color: #60748b;
+        color: rgba(214, 226, 239, 0.72);
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        margin-bottom: 0.7rem;
+        margin-bottom: 0.9rem;
     }
     .hero-side-item {
         display: flex;
         justify-content: space-between;
-        padding: 0.62rem 0;
-        border-bottom: 1px solid rgba(148,163,184,0.08);
-        color: #1d2b3a;
-        font-size: 0.95rem;
+        gap: 1rem;
+        padding: 0.9rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        color: #f5f7fb;
+        font-size: 1rem;
     }
     .hero-side-item:last-child {
         border-bottom: none;
     }
     .hero-side-soft {
-        color: #6d8095;
+        color: rgba(202, 215, 230, 0.68);
     }
     .risk-spotlight {
-        border-radius: 22px;
-        padding: 1.05rem;
-        margin-bottom: 0.9rem;
+        border-radius: 24px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
         border: 1px solid rgba(148,163,184,0.10);
-        background: linear-gradient(180deg, rgba(255,255,255,0.90), rgba(248,244,237,0.96));
+        background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,244,237,0.98));
+        box-shadow: 0 16px 30px rgba(15,23,42,0.05);
     }
     .risk-spotlight.high {
         box-shadow: inset 0 0 0 1px rgba(220,38,38,0.10);
@@ -279,10 +296,11 @@ st.markdown(
         gap: 1rem;
     }
     .chat-shell {
-        border: 1px solid rgba(148,163,184,0.10);
-        background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(248,244,237,0.96));
-        border-radius: 24px;
-        padding: 1.15rem 1.2rem;
+        border: 1px solid rgba(148,163,184,0.09);
+        background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(249,246,241,0.98));
+        border-radius: 30px;
+        padding: 1.5rem 1.55rem;
+        box-shadow: 0 18px 36px rgba(15,23,42,0.05);
     }
     .detail-toggle-shell {
         border: 1px solid rgba(148,163,184,0.10);
@@ -293,18 +311,48 @@ st.markdown(
     }
     .nav-shell {
         border: 1px solid rgba(148,163,184,0.10);
-        background: rgba(255,255,255,0.58);
-        border-radius: 26px;
-        padding: 1rem 1.1rem 0.7rem;
-        margin-top: 1.3rem;
-        margin-bottom: 1.1rem;
+        background:
+            radial-gradient(circle at top left, rgba(13,148,136,0.05), transparent 20%),
+            linear-gradient(180deg, rgba(255,255,255,0.70), rgba(255,255,255,0.50));
+        border-radius: 32px;
+        padding: 1.35rem 1.5rem 1rem;
+        margin-top: 1.6rem;
+        margin-bottom: 1.2rem;
+        box-shadow: 0 18px 42px rgba(15,23,42,0.06);
+    }
+    [data-testid="stFileUploader"] {
+        border: 1px dashed rgba(14, 38, 67, 0.18) !important;
+        border-radius: 24px !important;
+        background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(249,245,239,0.96)) !important;
+        padding: 0.85rem !important;
+    }
+    [data-testid="stFileUploader"] section {
+        padding: 1.2rem 1rem !important;
+    }
+    [data-testid="stFileUploaderDropzone"] {
+        background: transparent !important;
+        border: none !important;
+    }
+    .workspace-empty {
+        border: 1px dashed rgba(14, 38, 67, 0.14);
+        border-radius: 30px;
+        padding: 2.4rem 2rem;
+        background: linear-gradient(180deg, rgba(255,255,255,0.72), rgba(247,242,234,0.76));
+        text-align: center;
+        color: #5c6d82;
+    }
+    .workspace-empty-title {
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: #18283a;
+        margin-bottom: 0.45rem;
     }
     @media (max-width: 900px) {
         .hero-layout, .summary-shell, .mini-grid {
             grid-template-columns: 1fr;
         }
         .hero-title {
-            font-size: 2.2rem;
+            font-size: 2.6rem;
         }
         .block-container {
             padding-left: 1rem;
@@ -396,24 +444,24 @@ st.markdown(
         <div class="hero-layout">
             <div>
                 <div class="hero-kicker">Source-grounded document intelligence</div>
-                <div class="hero-title">Understand terms and conditions before you agree to them.</div>
+                <div class="hero-title">Read the fine print like someone built to catch it.</div>
                 <p class="hero-subtitle">
-                    Analyze PDFs, links, or photos of printed documents. Surface the real risks first, then ask follow-up questions with cited evidence.
+                    Analyze PDFs, links, or printed pages and surface the clauses that actually matter. Start with the risks, dive deeper only when needed, and ask grounded follow-up questions with cited evidence.
                 </p>
                 <div class="hero-support">
-                    <span class="hero-pill">PDFs</span>
-                    <span class="hero-pill">Links</span>
-                    <span class="hero-pill">Printed documents</span>
-                    <span class="hero-pill">Risk scoring</span>
-                    <span class="hero-pill">Cited answers</span>
+                    <span class="hero-pill">Risk-first analysis</span>
+                    <span class="hero-pill">PDFs and links</span>
+                    <span class="hero-pill">Printed document photos</span>
+                    <span class="hero-pill">Grounded Q&amp;A</span>
+                    <span class="hero-pill">Clause evidence</span>
                 </div>
             </div>
             <div class="hero-side">
-                <div class="hero-side-title">What users care about</div>
-                <div class="hero-side-item"><span>Can this cost me more later?</span><span class="hero-side-soft">Fees, EMI, penalties</span></div>
-                <div class="hero-side-item"><span>Can the company change terms quietly?</span><span class="hero-side-soft">Rate changes, notice</span></div>
-                <div class="hero-side-item"><span>Can I ask questions in plain English?</span><span class="hero-side-soft">Grounded chat</span></div>
-                <div class="hero-side-item"><span>Can I use printed documents too?</span><span class="hero-side-soft">Photo input</span></div>
+                <div class="hero-side-title">Why this feels useful fast</div>
+                <div class="hero-side-item"><span>See money-related red flags first</span><span class="hero-side-soft">Fees, EMIs, penalties</span></div>
+                <div class="hero-side-item"><span>Catch hidden change-rights and notice traps</span><span class="hero-side-soft">Revisions, silent updates</span></div>
+                <div class="hero-side-item"><span>Ask direct questions instead of reading everything</span><span class="hero-side-soft">Grounded chat</span></div>
+                <div class="hero-side-item"><span>Works even with printed forms and paperwork</span><span class="hero-side-soft">Photo input</span></div>
             </div>
         </div>
     </div>
@@ -440,19 +488,19 @@ st.markdown(
     """
     <div class="input-stage">
         <div class="section-label">Analyze A Document</div>
-        <div class="section-intro">Choose the input type that matches what the user actually has. All three options use the same analysis engine and risk scoring.</div>
+        <div class="section-intro">Choose the format the user already has. The product keeps the experience simple: analyze first, understand the risks, then ask direct questions only if you need clarification.</div>
         <div class="mini-grid">
             <div class="mini-card">
-                <div class="mini-title">1. Add the document</div>
-                <div class="mini-copy">Upload a PDF, paste a link, or add photos of a printed page.</div>
+                <div class="mini-title">Choose the source</div>
+                <div class="mini-copy">Upload a PDF, paste a link, or use photos from a printed contract or bank form.</div>
             </div>
             <div class="mini-card">
-                <div class="mini-title">2. Review the risks</div>
-                <div class="mini-copy">See the main red flags first, without digging through the full document.</div>
+                <div class="mini-title">See the critical risks first</div>
+                <div class="mini-copy">Get the main money, notice, fee, and clause risks before the user has to inspect the full document.</div>
             </div>
             <div class="mini-card">
-                <div class="mini-title">3. Ask follow-up questions</div>
-                <div class="mini-copy">Use chat to ask direct questions and get evidence-backed answers.</div>
+                <div class="mini-title">Go deeper only when needed</div>
+                <div class="mini-copy">Use chat and clause-level evidence to verify the tricky parts without information overload.</div>
             </div>
         </div>
     </div>
@@ -692,8 +740,10 @@ else:
     st.markdown(
         """
         <div class="nav-shell">
-            <div class="section-label">Results Workspace</div>
-            <div class="section-intro">Upload a PDF, paste a document link, or add document photos to unlock the overview, deep-dive review, and chat workspace.</div>
+            <div class="workspace-empty">
+                <div class="workspace-empty-title">Results workspace</div>
+                <div class="section-intro" style="margin-bottom:0;">Upload a document to unlock the overview, deep-dive review, and grounded chat experience. The layout expands into separate analysis spaces once a file, link, or printed page is processed.</div>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
