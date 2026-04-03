@@ -1,5 +1,6 @@
 import html
 import re
+from textwrap import dedent
 
 import requests
 import streamlit as st
@@ -563,6 +564,10 @@ def _action_prompt_for_clause(clause: dict):
     return prompts.get(category, "Review this clause carefully before agreeing to the document.")
 
 
+def _html_block(markup: str):
+    return dedent(markup).strip()
+
+
 def _apply_analysis_payload(payload):
     st.session_state.document_loaded = True
     st.session_state.document_id = payload["document_id"]
@@ -763,26 +768,30 @@ if st.session_state.analysis_payload:
             else "Once analysis finishes, this space will summarize what deserves attention first."
         )
         st.markdown(
-            f"""
-            <div class="overview-hero">
-                <div class="overview-kicker">At a glance</div>
-                <div class="overview-title">{html.escape(lead_text)}</div>
-                <div class="overview-copy">{html.escape(lead_note)}</div>
-            </div>
-            """,
+            _html_block(
+                f"""
+                <div class="overview-hero">
+                    <div class="overview-kicker">At a glance</div>
+                    <div class="overview-title">{html.escape(lead_text)}</div>
+                    <div class="overview-copy">{html.escape(lead_note)}</div>
+                </div>
+                """
+            ),
             unsafe_allow_html=True,
         )
 
         insight_cards = top_clauses[:3]
         if insight_cards:
             insight_html = "".join(
-                f"""
-                <div class="insight-card">
-                    <div class="insight-card-title">{html.escape(_display_category(clause["category"]))}</div>
-                    <div class="insight-card-copy">{html.escape(clause[clause_explanation_key])}</div>
-                    <div class="insight-card-note">What to check next: {html.escape(_action_prompt_for_clause(clause))}</div>
-                </div>
-                """
+                _html_block(
+                    f"""
+                    <div class="insight-card">
+                        <div class="insight-card-title">{html.escape(_display_category(clause["category"]))}</div>
+                        <div class="insight-card-copy">{html.escape(clause[clause_explanation_key])}</div>
+                        <div class="insight-card-note">What to check next: {html.escape(_action_prompt_for_clause(clause))}</div>
+                    </div>
+                    """
+                )
                 for clause in insight_cards
             )
             st.markdown(f'<div class="insight-grid">{insight_html}</div>', unsafe_allow_html=True)
@@ -795,12 +804,14 @@ if st.session_state.analysis_payload:
             st.markdown('<div class="section-intro">A calmer read of the document: what it covers, what can change later, and what the user should not miss.</div>', unsafe_allow_html=True)
             if summary_bullets:
                 summary_html = "".join(
-                    f"""
-                    <div class="summary-point">
-                        <div class="summary-point-title">Key takeaway {index}</div>
-                        <div class="summary-point-copy">{html.escape(point)}</div>
-                    </div>
-                    """
+                    _html_block(
+                        f"""
+                        <div class="summary-point">
+                            <div class="summary-point-title">Key takeaway {index}</div>
+                            <div class="summary-point-copy">{html.escape(point)}</div>
+                        </div>
+                        """
+                    )
                     for index, point in enumerate(summary_bullets, start=1)
                 )
                 st.markdown(
