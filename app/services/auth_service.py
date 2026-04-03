@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import os
 import secrets
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
@@ -119,6 +120,48 @@ def create_session(user_id: str):
     return token
 
 
+def google_oauth_settings():
+    backend_base = os.getenv("BACKEND_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
+    frontend_base = os.getenv("FRONTEND_BASE_URL", "http://localhost:8501").rstrip("/")
+    return {
+        "client_id": os.getenv("GOOGLE_CLIENT_ID", "").strip(),
+        "client_secret": os.getenv("GOOGLE_CLIENT_SECRET", "").strip(),
+        "redirect_uri": os.getenv("GOOGLE_REDIRECT_URI", f"{backend_base}/auth/google/callback").strip(),
+        "frontend_base_url": frontend_base,
+    }
+
+
+def google_oauth_ready():
+    settings = google_oauth_settings()
+    return bool(settings["client_id"] and settings["client_secret"] and settings["redirect_uri"])
+
+
+def create_google_state(next_url: str):
+    state = secrets.token_urlsafe(24)
+    with get_connection() as connection:
+        connection.execute(
+            """
+            INSERT INTO oauth_states (state, next_url, created_at)
+            VALUES (?, ?, ?)
+            """,
+            (state, next_url, _utc_now_string()),
+        )
+    return state
+
+
+def pop_google_state(state: str):
+    with get_connection() as connection:
+        row = connection.execute(
+            "SELECT next_url FROM oauth_states WHERE state = ?",
+            (state,),
+        ).fetchone()
+        connection.execute("DELETE FROM oauth_states WHERE state = ?", (state,))
+
+    if row is None:
+        return None
+    return row["next_url"]
+
+
 def get_user_from_token(token: str):
     if not token:
         return None
@@ -148,6 +191,48 @@ def get_user_from_token(token: str):
         "email": row["email"],
         "created_at": row["created_at"],
     }
+
+
+def upsert_google_user(email: str, name: str | None = None):
+    normalized_email = _normalize_email(email)
+    with get_connection() as connection:
+        row = connection.execute(
+            "SELECT id, name, email, created_at FROM users WHERE email = ?",
+            (normalized_email,),
+        ).fetchone()
+
+        if row:
+            if name and name != row["name"]:
+                connection.execute(
+                    "UPDATE users SET name = ? WHERE id = ?",
+                    (name, row["id"]),
+                )
+                row = connection.execute(
+                    "SELECT id, name, email, created_at FROM users WHERE id = ?",
+                    (row["id"],),
+                ).fetchone()
+            return _user_payload(row)
+
+        user_id = str(uuid4())
+        connection.execute(
+            """
+            INSERT INTO users (id, name, email, password_hash, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                user_id,
+                name.strip() if name else None,
+                normalized_email,
+                None,
+                _utc_now_string(),
+            ),
+        )
+        row = connection.execute(
+            "SELECT id, name, email, created_at FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+
+    return _user_payload(row)
 
 
 def revoke_session(token: str):

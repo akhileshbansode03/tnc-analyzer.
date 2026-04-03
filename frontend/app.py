@@ -1,6 +1,8 @@
 import html
+import os
 import re
 from textwrap import dedent
+from urllib.parse import quote
 
 import requests
 import streamlit as st
@@ -10,11 +12,12 @@ API_ANALYZE_URL = "http://127.0.0.1:8000/analyze-url"
 API_ANALYZE_IMAGES = "http://127.0.0.1:8000/analyze-images"
 API_ASK = "http://127.0.0.1:8000/ask"
 API_REPORT = "http://127.0.0.1:8000/report"
-API_AUTH_REGISTER = "http://127.0.0.1:8000/auth/register"
-API_AUTH_LOGIN = "http://127.0.0.1:8000/auth/login"
 API_AUTH_LOGOUT = "http://127.0.0.1:8000/auth/logout"
+API_AUTH_GOOGLE_START = "http://127.0.0.1:8000/auth/google/start"
+API_AUTH_ME = "http://127.0.0.1:8000/auth/me"
 API_HISTORY = "http://127.0.0.1:8000/history"
 API_LOAD_ANALYSIS = "http://127.0.0.1:8000/analysis"
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:8501")
 
 st.set_page_config(page_title="T&C Analyzer", page_icon="📄", layout="wide")
 
@@ -458,6 +461,60 @@ st.markdown(
         color: #18283a;
         margin-bottom: 0.45rem;
     }
+    .sidebar-auth-card {
+        border: 1px solid rgba(148,163,184,0.12);
+        border-radius: 24px;
+        padding: 1rem 1rem 0.95rem;
+        background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(248,244,237,0.98));
+        box-shadow: 0 12px 24px rgba(15,23,42,0.05);
+        margin-bottom: 1rem;
+    }
+    .sidebar-auth-title {
+        font-size: 1.02rem;
+        font-weight: 800;
+        color: #132235;
+        margin-bottom: 0.35rem;
+    }
+    .sidebar-auth-copy {
+        color: #66788d;
+        font-size: 0.9rem;
+        line-height: 1.55;
+        margin-bottom: 0.85rem;
+    }
+    .google-auth-link {
+        display: block;
+        text-decoration: none;
+        text-align: center;
+        border-radius: 16px;
+        border: 1px solid rgba(15,23,42,0.10);
+        background: linear-gradient(180deg, #ffffff, #f7f3ed);
+        color: #132235 !important;
+        font-weight: 700;
+        padding: 0.85rem 1rem;
+        box-shadow: 0 12px 22px rgba(15,23,42,0.08);
+    }
+    .google-auth-link:hover {
+        transform: translateY(-1px);
+    }
+    .history-item-card {
+        border: 1px solid rgba(148,163,184,0.10);
+        border-radius: 20px;
+        padding: 0.9rem 0.9rem 0.75rem;
+        background: rgba(255,255,255,0.72);
+        margin-bottom: 0.75rem;
+    }
+    .history-item-title {
+        font-weight: 700;
+        color: #132235;
+        margin-bottom: 0.2rem;
+        line-height: 1.4;
+    }
+    .history-item-meta {
+        color: #6d8095;
+        font-size: 0.82rem;
+        line-height: 1.45;
+        margin-bottom: 0.5rem;
+    }
     @media (max-width: 900px) {
         .hero-layout, .summary-shell, .mini-grid, .insight-grid {
             grid-template-columns: 1fr;
@@ -593,6 +650,29 @@ def _auth_headers():
     return {"Authorization": f"Bearer {token}"} if token else {}
 
 
+def _query_value(name: str):
+    try:
+        value = st.query_params.get(name)
+    except Exception:
+        return None
+    if isinstance(value, list):
+        return value[0] if value else None
+    return value
+
+
+def _clear_auth_query_params():
+    try:
+        for key in ["auth_token", "auth_error"]:
+            if key in st.query_params:
+                del st.query_params[key]
+    except Exception:
+        pass
+
+
+def _google_start_url():
+    return f"{API_AUTH_GOOGLE_START}?next_url={quote(FRONTEND_BASE_URL, safe=':/?=&')}"
+
+
 @st.cache_data(show_spinner=False)
 def _fetch_report_bytes(document_id: str, token: str | None):
     headers = {"Authorization": f"Bearer {token}"} if token else {}
@@ -621,6 +701,16 @@ def _clear_auth_state():
     st.session_state.current_user = None
     _fetch_history.clear()
     _fetch_report_bytes.clear()
+
+
+def _resolve_user_from_token(token: str):
+    response = requests.get(
+        API_AUTH_ME,
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=20,
+    )
+    response.raise_for_status()
+    return response.json()
 
 
 def _load_history_document(document_id: str):
@@ -690,11 +780,41 @@ if "auth_token" not in st.session_state:
 if "current_user" not in st.session_state:
     st.session_state.current_user = None
 
+auth_token_param = _query_value("auth_token")
+auth_error_param = _query_value("auth_error")
+
+if auth_token_param and auth_token_param != st.session_state.auth_token:
+    try:
+        user_payload = _resolve_user_from_token(auth_token_param)
+        st.session_state.auth_token = auth_token_param
+        st.session_state.current_user = user_payload
+        _fetch_history.clear()
+        _fetch_report_bytes.clear()
+    except Exception:
+        st.session_state.auth_token = None
+        st.session_state.current_user = None
+    finally:
+        _clear_auth_query_params()
+
+if auth_error_param:
+    st.sidebar.error("Google sign-in could not be completed. Please try again.")
+    _clear_auth_query_params()
+
 with st.sidebar:
     st.markdown("### Account")
     if st.session_state.current_user:
         user = st.session_state.current_user
-        st.caption(f"Signed in as {user.get('email')}")
+        st.markdown(
+            _html_block(
+                f"""
+                <div class="sidebar-auth-card">
+                    <div class="sidebar-auth-title">{html.escape(user.get('name') or 'Signed in')}</div>
+                    <div class="sidebar-auth-copy">{html.escape(user.get('email') or '')}</div>
+                </div>
+                """
+            ),
+            unsafe_allow_html=True,
+        )
         if st.button("Sign out", use_container_width=True):
             try:
                 requests.post(API_AUTH_LOGOUT, headers=_auth_headers(), timeout=15)
@@ -715,10 +835,18 @@ with st.sidebar:
                 risk = item["risk_overview"]
                 label = item.get("original_name") or f"{item['source_type'].upper()} document"
                 preview = " ".join((item.get("summary") or "").split())[:88]
-                st.markdown(f"**{label}**")
-                st.caption(f"H:{risk['high']} M:{risk['medium']} L:{risk['low']} | {item['created_at'][:10]}")
-                if preview:
-                    st.caption(preview + ("..." if len(preview) == 88 else ""))
+                st.markdown(
+                    _html_block(
+                        f"""
+                        <div class="history-item-card">
+                            <div class="history-item-title">{html.escape(label)}</div>
+                            <div class="history-item-meta">H:{risk['high']} M:{risk['medium']} L:{risk['low']} | {html.escape(item['created_at'][:10])}</div>
+                            <div class="history-item-meta">{html.escape(preview + ('...' if len(preview) == 88 else ''))}</div>
+                        </div>
+                        """
+                    ),
+                    unsafe_allow_html=True,
+                )
                 if st.button("Open analysis", key=f"history-open-{item['document_id']}", use_container_width=True):
                     with st.spinner("Loading saved analysis..."):
                         try:
@@ -726,66 +854,22 @@ with st.sidebar:
                             st.rerun()
                         except Exception as exc:
                             st.error(f"Could not load analysis: {exc}")
-                st.markdown("---")
         else:
             st.caption("Your saved analyses will appear here once you analyze documents while signed in.")
     else:
-        sign_in_tab, register_tab = st.tabs(["Sign in", "Create account"])
-
-        with sign_in_tab:
-            with st.form("login-form"):
-                login_email = st.text_input("Email", key="login-email")
-                login_password = st.text_input("Password", type="password", key="login-password")
-                login_submit = st.form_submit_button("Sign in", use_container_width=True)
-
-            if login_submit:
-                try:
-                    response = requests.post(
-                        API_AUTH_LOGIN,
-                        json={"email": login_email, "password": login_password},
-                        timeout=20,
-                    )
-                    payload = response.json()
-                    if response.status_code == 200:
-                        st.session_state.auth_token = payload["access_token"]
-                        st.session_state.current_user = payload["user"]
-                        _fetch_history.clear()
-                        _fetch_report_bytes.clear()
-                        st.rerun()
-                    else:
-                        st.error(payload.get("detail", "Could not sign in."))
-                except Exception as exc:
-                    st.error(f"Connection Error: {exc}")
-
-        with register_tab:
-            with st.form("register-form"):
-                register_name = st.text_input("Name", key="register-name")
-                register_email = st.text_input("Email", key="register-email")
-                register_password = st.text_input("Password", type="password", key="register-password")
-                register_submit = st.form_submit_button("Create account", use_container_width=True)
-
-            if register_submit:
-                try:
-                    response = requests.post(
-                        API_AUTH_REGISTER,
-                        json={
-                            "name": register_name,
-                            "email": register_email,
-                            "password": register_password,
-                        },
-                        timeout=20,
-                    )
-                    payload = response.json()
-                    if response.status_code == 200:
-                        st.session_state.auth_token = payload["access_token"]
-                        st.session_state.current_user = payload["user"]
-                        _fetch_history.clear()
-                        _fetch_report_bytes.clear()
-                        st.rerun()
-                    else:
-                        st.error(payload.get("detail", "Could not create account."))
-                except Exception as exc:
-                    st.error(f"Connection Error: {exc}")
+        st.markdown(
+            _html_block(
+                f"""
+                <div class="sidebar-auth-card">
+                    <div class="sidebar-auth-title">Sign in with Google</div>
+                    <div class="sidebar-auth-copy">Use one clean Google sign-in to save your analyses, reopen past documents, and keep exports tied to your account.</div>
+                    <a class="google-auth-link" href="{html.escape(_google_start_url())}" target="_self">Continue with Google</a>
+                </div>
+                """
+            ),
+            unsafe_allow_html=True,
+        )
+        st.caption("Google sign-in needs Google OAuth credentials in the backend environment before it can work in deployment.")
 
 # -------------------------------
 # FILE UPLOAD

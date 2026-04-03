@@ -1,11 +1,14 @@
 import base64
 import json
+import os
 import re
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse, urlunparse, parse_qsl
 from uuid import uuid4
 
-from fastapi import FastAPI, File, Header, HTTPException, Response, UploadFile
+import requests
+from fastapi import FastAPI, File, Header, HTTPException, Query, Response, UploadFile
+from fastapi.responses import RedirectResponse
 
 from app.db.database import init_db
 from app.db.vector_store import VectorStore
@@ -29,9 +32,14 @@ from app.services.analysis_service import (
 from app.services.auth_service import (
     authenticate_user,
     create_session,
+    create_google_state,
     get_user_from_token,
+    google_oauth_ready,
+    google_oauth_settings,
+    pop_google_state,
     register_user,
     revoke_session,
+    upsert_google_user,
 )
 from app.services.document_store import InMemoryDocumentStore
 from app.services.embedding import get_embeddings
@@ -176,6 +184,13 @@ def _restore_document_session(document_id: str, *, user_id: str | None = None):
     return payload, session
 
 
+def _append_query_params(url: str, **params):
+    parsed = urlparse(url)
+    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    query.update({key: value for key, value in params.items() if value is not None})
+    return urlunparse(parsed._replace(query=urlencode(query)))
+
+
 # =========================================================
 # 🔹 AUTH ENDPOINTS
 # =========================================================
@@ -209,12 +224,96 @@ async def login(request: AuthLoginRequest):
     )
 
 
+@app.get("/auth/google/start")
+async def auth_google_start(next_url: str | None = Query(default=None)):
+    if not google_oauth_ready():
+        raise HTTPException(
+            status_code=503,
+            detail="Google sign-in is not configured yet. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable it.",
+        )
+
+    settings = google_oauth_settings()
+    destination = next_url or settings["frontend_base_url"]
+    state = create_google_state(destination)
+    auth_url = "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(
+        {
+            "client_id": settings["client_id"],
+            "redirect_uri": settings["redirect_uri"],
+            "response_type": "code",
+            "scope": "openid email profile",
+            "access_type": "online",
+            "prompt": "select_account",
+            "state": state,
+        }
+    )
+    return RedirectResponse(auth_url)
+
+
+@app.get("/auth/google/callback")
+async def auth_google_callback(code: str | None = None, state: str | None = None, error: str | None = None):
+    settings = google_oauth_settings()
+    frontend_url = settings["frontend_base_url"]
+
+    if error:
+        return RedirectResponse(_append_query_params(frontend_url, auth_error=error))
+
+    if not code or not state:
+        return RedirectResponse(_append_query_params(frontend_url, auth_error="missing_google_callback_data"))
+
+    next_url = pop_google_state(state)
+    if not next_url:
+        return RedirectResponse(_append_query_params(frontend_url, auth_error="invalid_or_expired_state"))
+
+    try:
+        token_response = requests.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "code": code,
+                "client_id": settings["client_id"],
+                "client_secret": settings["client_secret"],
+                "redirect_uri": settings["redirect_uri"],
+                "grant_type": "authorization_code",
+            },
+            timeout=20,
+        )
+        token_response.raise_for_status()
+        token_payload = token_response.json()
+
+        access_token = token_payload.get("access_token")
+        if not access_token:
+            raise ValueError("Missing Google access token.")
+
+        profile_response = requests.get(
+            "https://openidconnect.googleapis.com/v1/userinfo",
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=20,
+        )
+        profile_response.raise_for_status()
+        profile = profile_response.json()
+
+        email = profile.get("email")
+        if not email:
+            raise ValueError("Google account did not return an email address.")
+
+        user = upsert_google_user(email=email, name=profile.get("name"))
+        session_token = create_session(user["id"])
+        return RedirectResponse(_append_query_params(next_url, auth_token=session_token))
+    except Exception:
+        return RedirectResponse(_append_query_params(next_url, auth_error="google_sign_in_failed"))
+
+
 @app.post("/auth/logout")
 async def logout(authorization: str | None = Header(default=None)):
     token = _extract_bearer_token(authorization)
     if token:
         revoke_session(token)
     return {"ok": True}
+
+
+@app.get("/auth/me", response_model=UserResponse)
+async def auth_me(authorization: str | None = Header(default=None)):
+    user = _current_user(authorization, required=True)
+    return UserResponse(**user)
 
 
 # =========================================================

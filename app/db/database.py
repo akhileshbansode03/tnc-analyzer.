@@ -32,6 +32,12 @@ def init_db():
                 expires_at TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS oauth_states (
+                state TEXT PRIMARY KEY,
+                next_url TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS documents (
                 id TEXT PRIMARY KEY,
                 user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
@@ -96,6 +102,9 @@ def init_db():
 
             CREATE INDEX IF NOT EXISTS idx_auth_sessions_user
             ON auth_sessions(user_id, expires_at DESC);
+
+            CREATE INDEX IF NOT EXISTS idx_oauth_states_created
+            ON oauth_states(created_at DESC);
 
             CREATE INDEX IF NOT EXISTS idx_chunks_document
             ON document_chunks(document_id, chunk_id);
