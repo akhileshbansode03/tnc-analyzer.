@@ -1,13 +1,22 @@
 import html
+import os
 import re
+from textwrap import dedent
 
 import requests
 import streamlit as st
+from dotenv import load_dotenv
 
-API_ANALYZE = "http://127.0.0.1:8000/analyze"
-API_ANALYZE_URL = "http://127.0.0.1:8000/analyze-url"
-API_ANALYZE_IMAGES = "http://127.0.0.1:8000/analyze-images"
-API_ASK = "http://127.0.0.1:8000/ask"
+load_dotenv()
+
+BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", os.getenv("API_BASE_URL", "http://127.0.0.1:8000")).rstrip("/")
+API_ANALYZE = f"{BACKEND_BASE_URL}/analyze"
+API_ANALYZE_URL = f"{BACKEND_BASE_URL}/analyze-url"
+API_ANALYZE_IMAGES = f"{BACKEND_BASE_URL}/analyze-images"
+API_ASK = f"{BACKEND_BASE_URL}/ask"
+API_REPORT = f"{BACKEND_BASE_URL}/report"
+API_ANALYSIS = f"{BACKEND_BASE_URL}/analysis"
+API_HEALTH = f"{BACKEND_BASE_URL}/health"
 
 st.set_page_config(page_title="T&C Analyzer", page_icon="📄", layout="wide")
 
@@ -64,6 +73,20 @@ st.markdown(
         box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
     }
     .stButton > button:hover {
+        border-color: rgba(11,31,58,0.24) !important;
+        transform: translateY(-2px);
+    }
+    .stDownloadButton > button {
+        border-radius: 16px !important;
+        border: 1px solid rgba(11,31,58,0.14) !important;
+        background: linear-gradient(135deg, #0f2747, #1a3a66) !important;
+        color: #f9f4eb !important;
+        font-weight: 700 !important;
+        padding: 0.8rem 1.25rem !important;
+        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
+        width: 100% !important;
+    }
+    .stDownloadButton > button:hover {
         border-color: rgba(11,31,58,0.24) !important;
         transform: translateY(-2px);
     }
@@ -437,8 +460,74 @@ st.markdown(
         color: #18283a;
         margin-bottom: 0.45rem;
     }
+    .sidebar-card {
+        border: 1px solid rgba(148,163,184,0.12);
+        border-radius: 24px;
+        padding: 1rem 1rem 0.95rem;
+        background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(248,244,237,0.98));
+        box-shadow: 0 12px 24px rgba(15,23,42,0.05);
+        margin-bottom: 1rem;
+    }
+    .sidebar-title {
+        font-size: 1.02rem;
+        font-weight: 800;
+        color: #132235;
+        margin-bottom: 0.35rem;
+    }
+    .sidebar-copy {
+        color: #66788d;
+        font-size: 0.9rem;
+        line-height: 1.55;
+        margin-bottom: 0.85rem;
+    }
+    .workspace-id-shell {
+        border: 1px solid rgba(148,163,184,0.10);
+        border-radius: 24px;
+        padding: 1.15rem 1.2rem;
+        background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(249,245,239,0.98));
+        box-shadow: 0 12px 24px rgba(15,23,42,0.05);
+    }
+    .workspace-id-label {
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.76rem;
+        font-weight: 800;
+        color: #7a8a9f;
+        margin-bottom: 0.45rem;
+    }
+    .workspace-id-value {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+        font-size: 0.95rem;
+        color: #16273a;
+        line-height: 1.7;
+        word-break: break-word;
+    }
+    .meta-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.9rem;
+    }
+    .meta-pill {
+        border: 1px solid rgba(148,163,184,0.10);
+        border-radius: 20px;
+        padding: 0.95rem 1rem;
+        background: rgba(255,255,255,0.76);
+    }
+    .meta-pill-label {
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #7a8a9f;
+        margin-bottom: 0.35rem;
+    }
+    .meta-pill-value {
+        color: #16273a;
+        font-weight: 700;
+        line-height: 1.6;
+    }
     @media (max-width: 900px) {
-        .hero-layout, .summary-shell, .mini-grid, .insight-grid {
+        .hero-layout, .summary-shell, .mini-grid, .insight-grid, .meta-grid {
             grid-template-columns: 1fr;
         }
         .hero-title {
@@ -563,6 +652,41 @@ def _action_prompt_for_clause(clause: dict):
     return prompts.get(category, "Review this clause carefully before agreeing to the document.")
 
 
+def _html_block(markup: str):
+    return dedent(markup).strip()
+
+
+@st.cache_data(show_spinner=False)
+def _fetch_report_bytes(document_id: str):
+    response = requests.get(f"{API_REPORT}/{document_id}", timeout=30)
+    response.raise_for_status()
+    return response.content
+
+
+@st.cache_data(show_spinner=False)
+def _fetch_saved_analysis(document_id: str):
+    response = requests.get(f"{API_ANALYSIS}/{document_id}", timeout=30)
+    response.raise_for_status()
+    return response.json()
+
+
+def _report_filename(payload: dict):
+    metadata = payload.get("metadata") or {}
+    original_name = (metadata.get("original_name") or "tnc_analysis").split(",")[0].strip()
+    stem = re.sub(r"\.[A-Za-z0-9]+$", "", original_name)
+    safe_stem = re.sub(r"[^A-Za-z0-9_-]+", "_", stem).strip("_") or "tnc_analysis"
+    return f"{safe_stem}_report.pdf"
+
+
+def _format_source_label(source_type: str | None):
+    mapping = {
+        "pdf": "PDF upload",
+        "url": "Link analysis",
+        "image": "Document photos",
+    }
+    return mapping.get((source_type or "").lower(), (source_type or "Unknown").replace("_", " ").title())
+
+
 def _apply_analysis_payload(payload):
     st.session_state.document_loaded = True
     st.session_state.document_id = payload["document_id"]
@@ -611,6 +735,51 @@ if "document_id" not in st.session_state:
 
 if "analysis_payload" not in st.session_state:
     st.session_state.analysis_payload = None
+
+with st.sidebar:
+    st.markdown(
+        """
+        <div class="sidebar-card">
+            <div class="sidebar-title">Workspace Tools</div>
+            <div class="sidebar-copy">Each analysis is stored locally in SQLite. Keep the document ID if you want to reopen the same result later without re-uploading the file.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    try:
+        health_response = requests.get(API_HEALTH, timeout=8)
+        if health_response.status_code == 200:
+            st.success("Backend reachable")
+        else:
+            st.warning("Backend is running but health check did not return 200.")
+    except Exception:
+        st.warning("Backend not reachable yet. Start the API before using the app.")
+
+    reopen_document_id = st.text_input(
+        "Open saved analysis",
+        value=st.session_state.get("document_id") or "",
+        placeholder="Paste a saved document ID",
+    )
+    if st.button("Open analysis", use_container_width=True):
+        if not reopen_document_id.strip():
+            st.warning("Paste a document ID first.")
+        else:
+            try:
+                payload = _fetch_saved_analysis(reopen_document_id.strip())
+                _apply_analysis_payload(payload)
+                st.success("Saved analysis loaded.")
+            except requests.HTTPError as exc:
+                try:
+                    detail = exc.response.json().get("detail", "Could not load that saved analysis.")
+                except Exception:
+                    detail = "Could not load that saved analysis."
+                st.error(detail)
+            except Exception as exc:
+                st.error(f"Connection Error: {exc}")
+
+    if st.session_state.document_id:
+        st.caption("Current document ID")
+        st.code(st.session_state.document_id)
 
 # -------------------------------
 # FILE UPLOAD
@@ -731,6 +900,24 @@ if st.session_state.analysis_payload:
     )
 
     with result_tab_overview:
+        overview_header_col, overview_action_col = st.columns([0.72, 0.28], gap="large")
+        with overview_header_col:
+            st.markdown('<div class="section-label">Results Workspace</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-intro">Review the summary, scan the strongest risks, reopen the document later with its ID, and export a report when you want something shareable.</div>', unsafe_allow_html=True)
+        with overview_action_col:
+            try:
+                report_bytes = _fetch_report_bytes(payload["document_id"])
+                st.download_button(
+                    "Download PDF Report",
+                    data=report_bytes,
+                    file_name=_report_filename(payload),
+                    mime="application/pdf",
+                    key=f"report-download-{payload['document_id']}",
+                    use_container_width=True,
+                )
+            except Exception:
+                st.caption("Report download will appear once the stored analysis is available.")
+
         metric_cols = st.columns(4, gap="large")
         metrics = [
             ("High Risk", payload["risk_overview"]["high"]),
@@ -751,6 +938,30 @@ if st.session_state.analysis_payload:
                 )
 
         st.markdown("<div style='height:1.25rem;'></div>", unsafe_allow_html=True)
+        metadata = payload.get("metadata") or {}
+        st.markdown(
+            _html_block(
+                f"""
+                <div class="meta-grid">
+                    <div class="meta-pill">
+                        <div class="meta-pill-label">Source</div>
+                        <div class="meta-pill-value">{html.escape(_format_source_label(metadata.get("source_type")))}</div>
+                    </div>
+                    <div class="meta-pill">
+                        <div class="meta-pill-label">Pages</div>
+                        <div class="meta-pill-value">{html.escape(str(metadata.get("page_count", 0)))}</div>
+                    </div>
+                    <div class="workspace-id-shell">
+                        <div class="workspace-id-label">Saved document ID</div>
+                        <div class="workspace-id-value">{html.escape(payload["document_id"])}</div>
+                    </div>
+                </div>
+                """
+            ),
+            unsafe_allow_html=True,
+        )
+
+        st.markdown("<div style='height:1.05rem;'></div>", unsafe_allow_html=True)
         lead_clause = top_clauses[0] if top_clauses else None
         lead_text = (
             lead_clause[clause_explanation_key]
@@ -763,26 +974,30 @@ if st.session_state.analysis_payload:
             else "Once analysis finishes, this space will summarize what deserves attention first."
         )
         st.markdown(
-            f"""
-            <div class="overview-hero">
-                <div class="overview-kicker">At a glance</div>
-                <div class="overview-title">{html.escape(lead_text)}</div>
-                <div class="overview-copy">{html.escape(lead_note)}</div>
-            </div>
-            """,
+            _html_block(
+                f"""
+                <div class="overview-hero">
+                    <div class="overview-kicker">At a glance</div>
+                    <div class="overview-title">{html.escape(lead_text)}</div>
+                    <div class="overview-copy">{html.escape(lead_note)}</div>
+                </div>
+                """
+            ),
             unsafe_allow_html=True,
         )
 
         insight_cards = top_clauses[:3]
         if insight_cards:
             insight_html = "".join(
-                f"""
-                <div class="insight-card">
-                    <div class="insight-card-title">{html.escape(_display_category(clause["category"]))}</div>
-                    <div class="insight-card-copy">{html.escape(clause[clause_explanation_key])}</div>
-                    <div class="insight-card-note">What to check next: {html.escape(_action_prompt_for_clause(clause))}</div>
-                </div>
-                """
+                _html_block(
+                    f"""
+                    <div class="insight-card">
+                        <div class="insight-card-title">{html.escape(_display_category(clause["category"]))}</div>
+                        <div class="insight-card-copy">{html.escape(clause[clause_explanation_key])}</div>
+                        <div class="insight-card-note">What to check next: {html.escape(_action_prompt_for_clause(clause))}</div>
+                    </div>
+                    """
+                )
                 for clause in insight_cards
             )
             st.markdown(f'<div class="insight-grid">{insight_html}</div>', unsafe_allow_html=True)
@@ -795,12 +1010,14 @@ if st.session_state.analysis_payload:
             st.markdown('<div class="section-intro">A calmer read of the document: what it covers, what can change later, and what the user should not miss.</div>', unsafe_allow_html=True)
             if summary_bullets:
                 summary_html = "".join(
-                    f"""
-                    <div class="summary-point">
-                        <div class="summary-point-title">Key takeaway {index}</div>
-                        <div class="summary-point-copy">{html.escape(point)}</div>
-                    </div>
-                    """
+                    _html_block(
+                        f"""
+                        <div class="summary-point">
+                            <div class="summary-point-title">Key takeaway {index}</div>
+                            <div class="summary-point-copy">{html.escape(point)}</div>
+                        </div>
+                        """
+                    )
                     for index, point in enumerate(summary_bullets, start=1)
                 )
                 st.markdown(
@@ -879,7 +1096,7 @@ if st.session_state.analysis_payload:
                             json={
                                 "question": question,
                                 "document_id": st.session_state.document_id,
-                            }
+                            },
                         )
 
                         result = response.json()

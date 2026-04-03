@@ -2,7 +2,6 @@
 # IMPORTS
 # -------------------------------
 import base64
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import os
 from dotenv import load_dotenv
 
@@ -11,17 +10,10 @@ from dotenv import load_dotenv
 # -------------------------------
 load_dotenv()
 
-USE_GEMINI = True   # 🔥 Now you can use Gemini safely
-
-# -------------------------------
-# LOAD LOCAL MODEL
-# -------------------------------
-print("🔄 Loading FLAN-T5 model...")
-
-tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-small")
-model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-small")
-
-print("✅ Local model ready")
+USE_GEMINI = os.getenv("USE_GEMINI", "true").lower() == "true"
+ENABLE_LOCAL_FALLBACK = os.getenv("ENABLE_LOCAL_FALLBACK", "true").lower() == "true"
+tokenizer = None
+model = None
 
 # -------------------------------
 # GEMINI SETUP
@@ -47,11 +39,29 @@ if USE_GEMINI:
         USE_GEMINI = False
 
 
+def _ensure_local_model():
+    global tokenizer, model
+
+    if not ENABLE_LOCAL_FALLBACK:
+        raise RuntimeError("Local fallback is disabled.")
+
+    if tokenizer is None or model is None:
+        print("🔄 Loading FLAN-T5 model...")
+        from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+
+        tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-small")
+        model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-small")
+        print("✅ Local model ready")
+
+    return tokenizer, model
+
+
 # =========================================================
 # 🔹 LOCAL FUNCTIONS (FALLBACK)
 # =========================================================
 
 def local_summary(chunks):
+    tokenizer, model = _ensure_local_model()
     key_points = []
 
     for chunk in chunks[:3]:
@@ -76,6 +86,7 @@ def local_summary(chunks):
 
 
 def local_explain(reason):
+    tokenizer, model = _ensure_local_model()
     prompt = f"Explain this risk simply:\n{reason}"
 
     inputs = tokenizer(prompt, return_tensors="pt", truncation=True)
@@ -161,6 +172,9 @@ def generate_summary(chunks):
         if result:
             return result
 
+    if not ENABLE_LOCAL_FALLBACK:
+        return "\n".join([f"• {chunk[:160].strip()}" for chunk in chunks[:3] if chunk.strip()])
+
     return local_summary(chunks)
 
 
@@ -169,6 +183,9 @@ def explain_simple(clause, reason=None, category=None):
         result = gemini_explain(reason)
         if result:
             return result
+
+    if not ENABLE_LOCAL_FALLBACK:
+        return reason or "This clause may affect the user."
 
     return local_explain(reason)
 

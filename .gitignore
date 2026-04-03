@@ -4,3 +4,7 @@ __pycache__/
 *.__pycache__
 node_modules/
 dist/
+data/uploads/
+data/*.db
+data/*.db-journal
+data/test_artifacts/

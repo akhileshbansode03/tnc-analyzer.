@@ -2,6 +2,7 @@
 # IMPORTS
 # -------------------------------
 import json
+import re
 
 import numpy as np
 
@@ -101,6 +102,51 @@ def build_context(chunks):
     return context
 
 
+def _contains_any(text, phrases):
+    return any(phrase in text for phrase in phrases)
+
+
+def _parse_llm_payload(raw_text):
+    if not raw_text:
+        return None
+
+    cleaned = raw_text.strip()
+    cleaned = cleaned.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+
+    try:
+        payload = json.loads(cleaned)
+        return {
+            "answer": payload.get("answer", "").strip(),
+            "grounded": bool(payload.get("grounded", False)),
+        }
+    except json.JSONDecodeError:
+        match = re.search(r"\{[\s\S]*\}", cleaned)
+        if match:
+            try:
+                payload = json.loads(match.group(0))
+                return {
+                    "answer": payload.get("answer", "").strip(),
+                    "grounded": bool(payload.get("grounded", False)),
+                }
+            except json.JSONDecodeError:
+                pass
+
+    grounded = not _contains_any(
+        cleaned.lower(),
+        [
+            "not clearly found",
+            "insufficient information",
+            "not enough information",
+            "cannot determine",
+            "unable to determine",
+        ],
+    )
+    return {
+        "answer": cleaned,
+        "grounded": grounded,
+    }
+
+
 # =========================================================
 # 🔹 FALLBACK ANSWER (VERY IMPORTANT)
 # =========================================================
@@ -108,6 +154,50 @@ def build_context(chunks):
 def fallback_answer(question, context):
     q = question.lower()
     ctx = context.lower()
+
+    if _contains_any(q, ["data", "privacy", "personal information", "share", "sharing", "protected", "protect"]):
+        protected = _contains_any(
+            ctx,
+            [
+                "will not be sold",
+                "without your approval",
+                "unless otherwise stated",
+                "applicable laws",
+            ],
+        )
+        shared = _contains_any(
+            ctx,
+            [
+                "share",
+                "sharing",
+                "transfer",
+                "disclose",
+                "third parties",
+                "third party",
+                "authorities",
+                "regulatory",
+                "judicial",
+                "statutory",
+            ],
+        )
+
+        if protected and shared:
+            return {
+                "answer": "Partly. The document says your personal information will not be sold or transferred to unaffiliated third parties without notice at collection or your approval, but it still allows sharing or disclosure in some situations such as compliance or service-related use.",
+                "grounded": True,
+            }
+
+        if shared:
+            return {
+                "answer": "Not fully. The document allows personal information to be shared or disclosed in some situations, including third-party or legal/compliance-related use.",
+                "grounded": True,
+            }
+
+        if protected:
+            return {
+                "answer": "The document gives some protection. It says personal information will not be sold or transferred to unaffiliated third parties unless that is disclosed at collection or you approve it.",
+                "grounded": True,
+            }
 
     # EMI related
     if "emi" in q:
@@ -130,6 +220,27 @@ def fallback_answer(question, context):
         if "interest rate" in ctx and "change" in ctx:
             return {
                 "answer": "Yes. The interest rate can change over time.",
+                "grounded": True,
+            }
+
+    if _contains_any(q, ["terminate", "stop service", "restrict access", "close account", "suspend"]):
+        if _contains_any(ctx, ["terminate", "stop service", "restrict access", "close account", "suspend"]):
+            return {
+                "answer": "Yes. The document gives the provider power to stop service, suspend access, or end the agreement in some situations.",
+                "grounded": True,
+            }
+
+    if _contains_any(q, ["liable", "responsible", "liability", "pay for losses", "indemnify"]):
+        if _contains_any(ctx, ["liable", "liability", "responsible", "indemnify", "hold harmless"]):
+            return {
+                "answer": "Yes. The document puts some legal or financial responsibility on the user if certain problems happen.",
+                "grounded": True,
+            }
+
+    if _contains_any(q, ["arbitration", "dispute", "court", "jurisdiction", "legal action"]):
+        if _contains_any(ctx, ["arbitration", "dispute", "court", "jurisdiction", "governing law"]):
+            return {
+                "answer": "Yes. The document sets rules for how disputes are handled, which may limit where or how you can challenge the company.",
                 "grounded": True,
             }
 
@@ -195,13 +306,12 @@ Instructions:
             response = gemini_model.generate_content(prompt)
 
             if hasattr(response, "text") and response.text:
-                response_text = response.text.strip()
-                response_text = response_text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-                payload = json.loads(response_text)
-                return {
-                    "answer": payload.get("answer", "").strip() or "Answer not clearly found in document.",
-                    "grounded": bool(payload.get("grounded", False)),
-                }
+                payload = _parse_llm_payload(response.text)
+                if payload and payload.get("answer"):
+                    return {
+                        "answer": payload["answer"] or "Answer not clearly found in document.",
+                        "grounded": payload["grounded"],
+                    }
 
         except Exception as e:
             print("❌ Gemini QA Error:", e)
@@ -239,13 +349,12 @@ Instructions:
             response = gemini_model.generate_content(prompt)
 
             if hasattr(response, "text") and response.text:
-                response_text = response.text.strip()
-                response_text = response_text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-                payload = json.loads(response_text)
-                return {
-                    "answer": payload.get("answer", "").strip() or "I could not summarize the risks clearly from the retrieved clauses.",
-                    "grounded": bool(payload.get("grounded", False)),
-                }
+                payload = _parse_llm_payload(response.text)
+                if payload and payload.get("answer"):
+                    return {
+                        "answer": payload["answer"] or "I could not summarize the risks clearly from the retrieved clauses.",
+                        "grounded": payload["grounded"],
+                    }
         except Exception as e:
             print("❌ Gemini Risk QA Error:", e)
 
