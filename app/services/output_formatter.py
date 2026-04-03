@@ -31,27 +31,42 @@ def format_output(summary, analysis):
     count = 0
     seen_reasons = set()
 
-    for item in analysis:
-        if item["risk"] == "HIGH" and count < 3:
+    sorted_analysis = sorted(
+        analysis,
+        key=lambda item: (item["risk_score"], item["confidence"]),
+        reverse=True,
+    )
 
-            if item["reason"] in seen_reasons:
-                continue
+    for item in sorted_analysis:
+        if count >= 3:
+            break
 
-            seen_reasons.add(item["reason"])
-            count += 1
+        fingerprint = (item["category"], item["reason"], item["clause"][:80])
+        if fingerprint in seen_reasons:
+            continue
 
-            output += f"\n🔴 {item['category'].upper()} RISK\n"
-            output += f"Risk: {item['reason']}\n"
+        seen_reasons.add(fingerprint)
+        count += 1
 
-            clause_preview = item["clause"][:120].replace("\n", " ")
-            output += f"Where: \"{clause_preview}...\"\n"
+        badge = {
+            "HIGH": "🔴",
+            "MEDIUM": "🟡",
+            "LOW": "🟢",
+        }.get(item["risk"], "⚪")
 
-            simple = explain_simple(
-                item["clause"],
-                reason=item["reason"],
-                category=item["category"]
-            )
+        output += f"\n{badge} {item['category'].upper()} RISK\n"
+        output += f"Risk: {item['reason']}\n"
+        output += f"Score: {item['risk_score']}/10 | Confidence: {item['confidence']}\n"
 
-            output += f"Meaning: {simple}\n"
+        clause_preview = item["clause"][:120].replace("\n", " ")
+        output += f"Where: \"{clause_preview}...\"\n"
+
+        simple = explain_simple(
+            item["clause"],
+            reason=item["reason"],
+            category=item["category"]
+        )
+
+        output += f"Meaning: {simple}\n"
 
     return output
