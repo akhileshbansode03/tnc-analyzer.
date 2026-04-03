@@ -9,6 +9,7 @@ API_ANALYZE = "http://127.0.0.1:8000/analyze"
 API_ANALYZE_URL = "http://127.0.0.1:8000/analyze-url"
 API_ANALYZE_IMAGES = "http://127.0.0.1:8000/analyze-images"
 API_ASK = "http://127.0.0.1:8000/ask"
+API_REPORT = "http://127.0.0.1:8000/report"
 
 st.set_page_config(page_title="T&C Analyzer", page_icon="📄", layout="wide")
 
@@ -65,6 +66,20 @@ st.markdown(
         box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
     }
     .stButton > button:hover {
+        border-color: rgba(11,31,58,0.24) !important;
+        transform: translateY(-2px);
+    }
+    .stDownloadButton > button {
+        border-radius: 16px !important;
+        border: 1px solid rgba(11,31,58,0.14) !important;
+        background: linear-gradient(135deg, #0f2747, #1a3a66) !important;
+        color: #f9f4eb !important;
+        font-weight: 700 !important;
+        padding: 0.8rem 1.25rem !important;
+        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
+        width: 100% !important;
+    }
+    .stDownloadButton > button:hover {
         border-color: rgba(11,31,58,0.24) !important;
         transform: translateY(-2px);
     }
@@ -568,6 +583,21 @@ def _html_block(markup: str):
     return dedent(markup).strip()
 
 
+@st.cache_data(show_spinner=False)
+def _fetch_report_bytes(document_id: str):
+    response = requests.get(f"{API_REPORT}/{document_id}", timeout=30)
+    response.raise_for_status()
+    return response.content
+
+
+def _report_filename(payload: dict):
+    metadata = payload.get("metadata") or {}
+    original_name = (metadata.get("original_name") or "tnc_analysis").split(",")[0].strip()
+    stem = re.sub(r"\.[A-Za-z0-9]+$", "", original_name)
+    safe_stem = re.sub(r"[^A-Za-z0-9_-]+", "_", stem).strip("_") or "tnc_analysis"
+    return f"{safe_stem}_report.pdf"
+
+
 def _apply_analysis_payload(payload):
     st.session_state.document_loaded = True
     st.session_state.document_id = payload["document_id"]
@@ -736,6 +766,24 @@ if st.session_state.analysis_payload:
     )
 
     with result_tab_overview:
+        overview_header_col, overview_action_col = st.columns([0.72, 0.28], gap="large")
+        with overview_header_col:
+            st.markdown('<div class="section-label">Results Workspace</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-intro">Review the summary, scan the strongest risks, and export a report when you want something shareable.</div>', unsafe_allow_html=True)
+        with overview_action_col:
+            try:
+                report_bytes = _fetch_report_bytes(payload["document_id"])
+                st.download_button(
+                    "Download PDF Report",
+                    data=report_bytes,
+                    file_name=_report_filename(payload),
+                    mime="application/pdf",
+                    key=f"report-download-{payload['document_id']}",
+                    use_container_width=True,
+                )
+            except Exception:
+                st.caption("Report download will appear once the stored analysis is available.")
+
         metric_cols = st.columns(4, gap="large")
         metrics = [
             ("High Risk", payload["risk_overview"]["high"]),

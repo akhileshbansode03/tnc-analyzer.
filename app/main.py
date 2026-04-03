@@ -5,7 +5,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 from uuid import uuid4
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Response, UploadFile
 
 from app.db.database import init_db
 from app.models.schemas import AnalyzeResponse, AnalyzeUrlRequest, AskRequest, AskResponse, DocumentMetadata
@@ -20,10 +20,12 @@ from app.services.persistence_service import (
     compute_file_checksum,
     compute_text_checksum,
     ensure_storage_path,
+    fetch_document_bundle,
     persist_analysis,
     persist_chat_exchange,
 )
 from app.services.qa_service import answer_question
+from app.services.report_service import build_analysis_report_pdf, build_report_filename
 
 app = FastAPI()
 
@@ -250,3 +252,18 @@ async def ask_question(request: AskRequest):
     )
     persist_chat_exchange(request.document_id, request.question, answer)
     return answer
+
+
+@app.get("/report/{document_id}")
+async def download_report(document_id: str):
+    bundle = fetch_document_bundle(document_id)
+    if bundle is None or bundle.get("analysis") is None:
+        raise HTTPException(status_code=404, detail="Stored analysis not found for this document.")
+
+    report_bytes = build_analysis_report_pdf(bundle)
+    filename = build_report_filename(bundle)
+    return Response(
+        content=report_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
