@@ -96,6 +96,96 @@ st.markdown(
         padding: 1.25rem 1.3rem;
         box-shadow: 0 14px 30px rgba(15,23,42,0.06);
     }
+    .overview-hero {
+        border: 1px solid rgba(11, 31, 58, 0.10);
+        background:
+            radial-gradient(circle at top right, rgba(13,148,136,0.10), transparent 22%),
+            radial-gradient(circle at bottom left, rgba(251,146,60,0.10), transparent 18%),
+            linear-gradient(135deg, rgba(255,255,255,0.98), rgba(249,245,239,0.98));
+        border-radius: 30px;
+        padding: 1.7rem 1.8rem;
+        box-shadow: 0 18px 34px rgba(15,23,42,0.06);
+    }
+    .overview-kicker {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 0.32rem 0.7rem;
+        font-size: 0.78rem;
+        font-weight: 800;
+        background: rgba(11,31,58,0.08);
+        color: #173250;
+        margin-bottom: 0.8rem;
+    }
+    .overview-title {
+        font-size: 2rem;
+        line-height: 1.02;
+        letter-spacing: -0.03em;
+        font-weight: 800;
+        color: #102032;
+        margin-bottom: 0.55rem;
+        max-width: 720px;
+    }
+    .overview-copy {
+        color: #5d6f84;
+        line-height: 1.75;
+        font-size: 1rem;
+        max-width: 840px;
+    }
+    .summary-point {
+        border-top: 1px solid rgba(148,163,184,0.10);
+        padding-top: 0.95rem;
+        margin-top: 0.95rem;
+    }
+    .summary-point:first-child {
+        border-top: none;
+        padding-top: 0;
+        margin-top: 0.15rem;
+    }
+    .summary-point-title {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #7a8a9f;
+        margin-bottom: 0.45rem;
+        font-weight: 800;
+    }
+    .summary-point-copy {
+        color: #17283d;
+        line-height: 1.8;
+        font-size: 1rem;
+    }
+    .insight-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1.1rem;
+        margin-top: 1.2rem;
+    }
+    .insight-card {
+        border: 1px solid rgba(148,163,184,0.10);
+        border-radius: 24px;
+        padding: 1.15rem 1.15rem 1rem;
+        background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(249,245,239,0.98));
+        box-shadow: 0 10px 22px rgba(15,23,42,0.04);
+    }
+    .insight-card-title {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #7a8a9f;
+        margin-bottom: 0.4rem;
+        font-weight: 800;
+    }
+    .insight-card-copy {
+        color: #18283a;
+        line-height: 1.7;
+        font-weight: 600;
+        margin-bottom: 0.7rem;
+    }
+    .insight-card-note {
+        color: #617287;
+        line-height: 1.65;
+        font-size: 0.92rem;
+    }
     .summary-card {
         border: 1px solid rgba(148, 163, 184, 0.10);
         background:
@@ -348,7 +438,7 @@ st.markdown(
         margin-bottom: 0.45rem;
     }
     @media (max-width: 900px) {
-        .hero-layout, .summary-shell, .mini-grid {
+        .hero-layout, .summary-shell, .mini-grid, .insight-grid {
             grid-template-columns: 1fr;
         }
         .hero-title {
@@ -430,6 +520,47 @@ def _display_category(category: str):
         "other": "Other",
     }
     return mapping.get(category, category.replace("_", " ").title())
+
+
+def _extract_summary_bullets(formatted_output: str):
+    summary_block = formatted_output or ""
+    if "RISK OVERVIEW:" in summary_block:
+        summary_block = summary_block.split("RISK OVERVIEW:", 1)[0]
+    summary_block = summary_block.replace("📄 SUMMARY:", "").strip()
+    candidates = re.split(r"(?:\n|(?<=\.)\s+)[\*\u2022\-]?\s*", summary_block)
+    bullets = []
+    for candidate in candidates:
+        cleaned = " ".join(candidate.split()).strip(" -*•")
+        if len(cleaned) < 25:
+            continue
+        if cleaned.lower().startswith("summary"):
+            continue
+        bullets.append(cleaned)
+    deduped = []
+    seen = set()
+    for bullet in bullets:
+        key = bullet.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(bullet)
+    return deduped[:5]
+
+
+def _action_prompt_for_clause(clause: dict):
+    category = clause.get("category", "general")
+    prompts = {
+        "payment": "Check whether your EMI, total cost, or repayment timeline can change later.",
+        "fees": "Look for charges that may apply later, especially hidden or conditional fees.",
+        "penalty": "See when penalties start and how quickly overdue amounts can grow.",
+        "privacy": "Verify who can receive your data and whether notice or consent is required.",
+        "termination": "Check who can end the agreement and what happens after termination.",
+        "liability": "See who carries the loss if something goes wrong.",
+        "refund": "Check when money is refundable and when it is not.",
+        "renewal": "See whether the agreement can continue or renew automatically.",
+        "dispute": "Check where disputes are handled and whether arbitration is mandatory.",
+    }
+    return prompts.get(category, "Review this clause carefully before agreeing to the document.")
 
 
 def _apply_analysis_payload(payload):
@@ -592,6 +723,7 @@ if st.session_state.analysis_payload:
     top_clauses = _dedupe_clauses(payload["clauses"], limit=6)
     deep_clauses = _dedupe_clauses(payload["clauses"], limit=12)
     summary_text = payload["formatted_output"]
+    summary_bullets = _extract_summary_bullets(summary_text)
     clause_explanation_key = "reason"
     st.markdown('<div class="nav-shell">', unsafe_allow_html=True)
     result_tab_overview, result_tab_deep_dive, result_tab_chat = st.tabs(
@@ -618,20 +750,72 @@ if st.session_state.analysis_payload:
                     unsafe_allow_html=True,
                 )
 
+        st.markdown("<div style='height:1.25rem;'></div>", unsafe_allow_html=True)
+        lead_clause = top_clauses[0] if top_clauses else None
+        lead_text = (
+            lead_clause[clause_explanation_key]
+            if lead_clause
+            else "Upload a document to surface the most important risks first."
+        )
+        lead_note = (
+            _action_prompt_for_clause(lead_clause)
+            if lead_clause
+            else "Once analysis finishes, this space will summarize what deserves attention first."
+        )
+        st.markdown(
+            f"""
+            <div class="overview-hero">
+                <div class="overview-kicker">At a glance</div>
+                <div class="overview-title">{html.escape(lead_text)}</div>
+                <div class="overview-copy">{html.escape(lead_note)}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        insight_cards = top_clauses[:3]
+        if insight_cards:
+            insight_html = "".join(
+                f"""
+                <div class="insight-card">
+                    <div class="insight-card-title">{html.escape(_display_category(clause["category"]))}</div>
+                    <div class="insight-card-copy">{html.escape(clause[clause_explanation_key])}</div>
+                    <div class="insight-card-note">What to check next: {html.escape(_action_prompt_for_clause(clause))}</div>
+                </div>
+                """
+                for clause in insight_cards
+            )
+            st.markdown(f'<div class="insight-grid">{insight_html}</div>', unsafe_allow_html=True)
+
         st.markdown("<div style='height:1.4rem;'></div>", unsafe_allow_html=True)
         left_col, right_col = st.columns([1.12, 0.88], gap="large")
 
         with left_col:
             st.markdown('<div class="section-label">Executive Summary</div>', unsafe_allow_html=True)
-            st.markdown('<div class="section-intro">Start here for the short version of what the document does, what can change, and where the biggest user impact sits.</div>', unsafe_allow_html=True)
-            st.markdown(
-                f'<div class="summary-card"><pre style="white-space:pre-wrap;font-family:inherit;margin:0;line-height:1.82;">{html.escape(summary_text)}</pre></div>',
-                unsafe_allow_html=True,
-            )
+            st.markdown('<div class="section-intro">A calmer read of the document: what it covers, what can change later, and what the user should not miss.</div>', unsafe_allow_html=True)
+            if summary_bullets:
+                summary_html = "".join(
+                    f"""
+                    <div class="summary-point">
+                        <div class="summary-point-title">Key takeaway {index}</div>
+                        <div class="summary-point-copy">{html.escape(point)}</div>
+                    </div>
+                    """
+                    for index, point in enumerate(summary_bullets, start=1)
+                )
+                st.markdown(
+                    f'<div class="summary-card">{summary_html}</div>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    f'<div class="summary-card"><pre style="white-space:pre-wrap;font-family:inherit;margin:0;line-height:1.82;">{html.escape(summary_text)}</pre></div>',
+                    unsafe_allow_html=True,
+                )
 
         with right_col:
             st.markdown('<div class="section-label">Top Risk Signals</div>', unsafe_allow_html=True)
-            st.markdown('<div class="section-intro">The strongest watch-outs, surfaced before the user has to read deeper.</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-intro">The strongest watch-outs, written to be scanned quickly before going into the full clause text.</div>', unsafe_allow_html=True)
             for clause in top_clauses[:3]:
                 badges = (
                     _risk_badge(clause["risk"])
@@ -643,7 +827,8 @@ if st.session_state.analysis_payload:
                     <div class="risk-spotlight {'high' if clause['risk']=='HIGH' else 'medium'}">
                         {badges}
                         <div style="margin-top:0.6rem;font-weight:600;line-height:1.7;">{html.escape(clause[clause_explanation_key])}</div>
-                        <div class="muted" style="margin-top:0.55rem;">Page {clause['page_number']} | Confidence {clause['confidence']}</div>
+                        <div class="muted" style="margin-top:0.65rem;">What to do: {html.escape(_action_prompt_for_clause(clause))}</div>
+                        <div class="muted" style="margin-top:0.45rem;">Page {clause['page_number']} | Confidence {clause['confidence']}</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
